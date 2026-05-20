@@ -1,0 +1,2317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>플래너</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500&family=Noto+Sans+KR:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:#F5F2EC; --surface:#FDFAF5; --surface2:#EDE9E1;
+  --border:#D8D2C5; --border-light:#E8E3D9;
+  --text:#1C1A17; --text-muted:#7A7468; --text-faint:#B0A99E;
+  --accent:#2C4A3E; --sat:#4A6FA5; --sun:#B55C5C;
+  --radius:12px; --radius-sm:7px;
+  --shadow:0 2px 16px rgba(28,26,23,0.08);
+  --shadow-sm:0 1px 6px rgba(28,26,23,0.06);
+}
+[data-theme="dark"] {
+  --bg:#16151A; --surface:#1E1D24; --surface2:#252430;
+  --border:#35334A; --border-light:#2C2A3C;
+  --text:#E8E6F0; --text-muted:#7E7C94; --text-faint:#4A4860;
+  --accent:#7B9E87; --sat:#6B8FC4; --sun:#C47878;
+  --shadow:0 2px 16px rgba(0,0,0,0.3); --shadow-sm:0 1px 6px rgba(0,0,0,0.2);
+}
+[data-theme="mint"] {
+  --bg:#EEF7F4; --surface:#F8FDFB; --surface2:#DFF0EA;
+  --border:#B8D9CE; --border-light:#CEE9DF;
+  --text:#1A2E28; --text-muted:#5A7D72; --text-faint:#96BBB2;
+  --accent:#2A7A62; --sat:#3A6EA8; --sun:#A84040;
+}
+[data-theme="sand"] {
+  --bg:#F2EDE4; --surface:#FAF6EF; --surface2:#E8E0D2;
+  --border:#C8BBA8; --border-light:#D8CEBC;
+  --text:#2A2218; --text-muted:#7A6A52; --text-faint:#A8987C;
+  --accent:#8B5E2C; --sat:#4A6FA5; --sun:#B55C5C;
+}
+[data-theme="violet"] {
+  --bg:#F0EEF8; --surface:#FAF9FE; --surface2:#E4E0F4;
+  --border:#C4BCE8; --border-light:#D4CEEE;
+  --text:#1A1530; --text-muted:#6A6090; --text-faint:#A098C8;
+  --accent:#5A48B8; --sat:#3A6EA8; --sun:#B85A78;
+}
+
+body {
+  font-family:'Noto Sans KR',sans-serif;
+  background:var(--bg); color:var(--text);
+  min-height:100vh; font-size:14px; line-height:1.5;
+  transition:background .25s,color .25s;
+}
+.app { max-width:980px; margin:0 auto; padding:2.5rem 1.5rem 4rem; }
+
+/* Header */
+.header {
+  display:flex; align-items:flex-end; justify-content:space-between;
+  margin-bottom:2rem; padding-bottom:1.25rem; border-bottom:1px solid var(--border);
+}
+.logo { display:flex; flex-direction:column; gap:2px; }
+.logo-label {
+  font-size:11px; font-weight:400; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--text-muted); font-family:'JetBrains Mono',monospace;
+}
+.logo-name { font-family:'Noto Serif KR',serif; font-size:32px; line-height:1; color:var(--text); }
+
+.view-toggle {
+  display:flex; background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:3px;
+}
+.view-btn {
+  padding:6px 16px; font-size:12.5px; font-family:'Noto Sans KR',sans-serif;
+  font-weight:400; border:none; background:transparent; border-radius:5px;
+  cursor:pointer; color:var(--text-muted); transition:all .18s;
+}
+.view-btn.active { background:var(--surface); color:var(--text); font-weight:500; box-shadow:var(--shadow-sm); }
+
+/* Nav row */
+.nav-row { display:flex; align-items:center; gap:10px; margin-bottom:1.5rem; }
+.nav-btn {
+  width:32px; height:32px; display:flex; align-items:center; justify-content:center;
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
+  cursor:pointer; color:var(--text-muted); font-size:14px; transition:all .15s;
+}
+.nav-btn:hover { background:var(--surface2); color:var(--text); }
+.period-label { font-family:'Noto Serif KR',serif; font-size:21px; color:var(--text); min-width:200px; }
+.today-btn {
+  margin-left:4px; padding:5px 14px; font-size:12px; font-family:'Noto Sans KR',sans-serif;
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
+  cursor:pointer; color:var(--text-muted); transition:all .15s;
+}
+.today-btn:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+
+/* Settings panel */
+.settings-panel {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.75rem 2rem;
+  margin-bottom:1.5rem; box-shadow:var(--shadow); display:none;
+}
+.settings-panel.open { display:block; }
+.settings-title { font-family:'Noto Serif KR',serif; font-size:20px; margin-bottom:1.75rem; color:var(--text); }
+.settings-grid { display:grid; grid-template-columns:1fr 1fr; gap:2rem; }
+@media(max-width:640px){.settings-grid{grid-template-columns:1fr;}}
+.setting-group { display:flex; flex-direction:column; gap:12px; }
+.setting-group-full { grid-column:1/-1; }
+.setting-label {
+  font-size:10.5px; font-weight:500; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--text-muted); font-family:'JetBrains Mono',monospace;
+}
+
+/* Week start toggle */
+.week-start-toggle {
+  display:flex; background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:3px; width:fit-content;
+}
+.ws-btn {
+  padding:7px 20px; font-size:13px; font-family:'Noto Sans KR',sans-serif;
+  border:none; background:transparent; border-radius:5px; cursor:pointer;
+  color:var(--text-muted); transition:all .18s;
+}
+.ws-btn.active { background:var(--surface); color:var(--text); font-weight:500; box-shadow:var(--shadow-sm); }
+
+/* Theme picker */
+.theme-grid { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.theme-swatch {
+  width:38px; height:38px; border-radius:50%; cursor:pointer;
+  border:2.5px solid transparent; transition:all .15s; position:relative;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  overflow:hidden;
+}
+.theme-swatch.active { border-color:var(--accent); transform:scale(1.1); }
+.theme-swatch::after {
+  content:'✓'; font-size:13px; color:#fff; opacity:0; transition:opacity .15s;
+  text-shadow:0 1px 4px rgba(0,0,0,.7); position:relative; z-index:1;
+}
+.theme-swatch.active::after { opacity:1; }
+.sw-half { position:absolute; inset:0; display:flex; }
+.sw-left { width:50%; height:100%; }
+.sw-right { width:50%; height:100%; }
+
+/* Effect picker */
+.effect-list { display:flex; flex-direction:column; gap:2px; }
+.effect-row {
+  display:flex; align-items:center; gap:14px; padding:12px 14px;
+  border-radius:var(--radius-sm); cursor:pointer; transition:background .12s;
+  user-select:none; border:1px solid transparent;
+}
+.effect-row:hover { background:var(--surface2); }
+.effect-row.selected { background:var(--surface2); border-color:var(--border); }
+.effect-radio {
+  width:17px; height:17px; border-radius:50%; border:1.5px solid var(--border);
+  flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  transition:all .15s; background:var(--surface);
+}
+.effect-row.selected .effect-radio { border-color:var(--accent); }
+.effect-radio-dot {
+  width:9px; height:9px; border-radius:50%; background:var(--accent);
+  opacity:0; transition:opacity .15s; transform:scale(0); transition:all .15s;
+}
+.effect-row.selected .effect-radio-dot { opacity:1; transform:scale(1); }
+.effect-info { flex:1; }
+.effect-name { font-size:13px; font-weight:500; color:var(--text); }
+.effect-desc { font-size:11.5px; color:var(--text-muted); margin-top:2px; }
+
+/* Month view */
+.month-grid {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow);
+}
+.month-dow {
+  display:grid; grid-template-columns:repeat(7,1fr);
+  background:var(--surface2); border-bottom:1px solid var(--border);
+}
+.month-dow span {
+  text-align:center; font-size:11px; font-weight:500; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--text-muted);
+  padding:10px 0; font-family:'JetBrains Mono',monospace;
+}
+.month-days { display:grid; grid-template-columns:repeat(7,1fr); }
+.month-cell {
+  min-height:78px; padding:8px 10px;
+  border-top:1px solid var(--border-light); border-right:1px solid var(--border-light);
+  cursor:pointer; transition:background .12s;
+}
+.month-cell:nth-child(7n) { border-right:none; }
+.month-cell:hover { background:var(--surface2); }
+.month-cell.other-month { opacity:.4; }
+.day-num {
+  font-size:12px; font-weight:500; color:var(--text);
+  width:24px; height:24px; display:flex; align-items:center; justify-content:center;
+  border-radius:50%; margin-bottom:5px; font-family:'JetBrains Mono',monospace;
+}
+.month-cell.today .day-num { background:var(--accent); color:#fff; }
+.dot-row { display:flex; flex-wrap:wrap; gap:3px; }
+.dot { width:6px; height:6px; border-radius:50%; }
+
+/* Week view */
+.week-grid {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow);
+}
+.week-header {
+  display:grid; grid-template-columns:repeat(7,1fr);
+  background:var(--surface2); border-bottom:1px solid var(--border);
+}
+.week-head-cell { padding:12px 8px 10px; text-align:center; border-right:1px solid var(--border-light); }
+.week-head-cell:last-child { border-right:none; }
+.week-head-cell .dow {
+  font-size:10px; font-weight:500; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--text-muted); font-family:'JetBrains Mono',monospace; margin-bottom:5px;
+}
+.wdate {
+  font-family:'Noto Serif KR',serif; font-size:20px; color:var(--text);
+  width:32px; height:32px; display:flex; align-items:center; justify-content:center;
+  border-radius:50%; margin:0 auto;
+}
+.week-head-cell.today .wdate { background:var(--accent); color:#fff; font-size:17px; }
+.week-body { display:grid; grid-template-columns:repeat(7,1fr); min-height:300px; align-items:start; }
+.week-col {
+  padding:8px 7px; border-right:1px solid var(--border-light);
+  border-top:1px solid var(--border-light);
+  min-height:300px; display:flex; flex-direction:column; gap:5px;
+}
+.week-col:last-child { border-right:none; }
+
+/* Plan items */
+.plan-item {
+  border-radius:var(--radius-sm); border:1px solid var(--border-light);
+  background:var(--bg); padding:5px 6px 5px 5px;
+  display:flex; align-items:flex-start; gap:5px; position:relative; overflow:hidden;
+  transition:opacity .2s,border-color .15s;
+}
+.plan-item:hover { border-color:var(--border); }
+.plan-item.done { opacity:.42; }
+.plan-color-bar { position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:3px 0 0 3px; }
+.plan-check-wrap { padding-left:2px; flex-shrink:0; margin-top:1px; }
+.plan-check {
+  width:14px; height:14px; border-radius:3px; border:1.5px solid var(--border);
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:all .15s; background:transparent;
+}
+.plan-check.checked { background:var(--accent); border-color:var(--accent); }
+.plan-check.checked::after {
+  content:''; width:8px; height:5px;
+  border-left:1.5px solid #fff; border-bottom:1.5px solid #fff;
+  transform:rotate(-45deg) translate(1px,-1px); display:block;
+}
+.plan-text { font-size:11.5px; color:var(--text); flex:1; line-height:1.4; word-break:break-all; }
+.plan-del {
+  background:none; border:none; cursor:pointer; color:var(--text-faint);
+  font-size:14px; padding:0; opacity:0; transition:opacity .12s,color .12s; flex-shrink:0;
+}
+.plan-item:hover .plan-del { opacity:1; }
+.plan-del:hover { color:var(--sun); }
+.add-plan-btn {
+  width:100%; background:none; border:1px dashed var(--border-light);
+  border-radius:var(--radius-sm); padding:5px 6px; font-size:11px;
+  color:var(--text-faint); cursor:pointer; text-align:center; transition:all .15s;
+  font-family:'Noto Sans KR',sans-serif; margin-top:2px;
+}
+.add-plan-btn:hover { border-color:var(--accent); color:var(--accent); }
+.edit-input {
+  width:100%; font-size:11.5px; border:none; background:transparent;
+  color:var(--text); outline:none; resize:none;
+  font-family:'Noto Sans KR',sans-serif; line-height:1.4;
+}
+.inline-add { border-radius:var(--radius-sm); border:1px solid var(--accent); background:var(--surface); padding:5px 8px; }
+
+/* Drag & drop */
+.plan-item { cursor:grab; }
+.plan-item:active { cursor:grabbing; }
+.plan-item.dragging { opacity:.35; transform:scale(.98); }
+.plan-drop-indicator {
+  height:2px; background:var(--accent); border-radius:2px;
+  margin:1px 0; opacity:.85; pointer-events:none;
+  box-shadow:0 0 4px var(--accent);
+}
+.week-col.drag-over { background:color-mix(in srgb, var(--accent) 6%, transparent); }
+.plan-item .plan-text,
+.plan-item .plan-check-wrap,
+.plan-item .plan-del { cursor:auto; }
+.plan-item .plan-check { cursor:pointer; }
+.plan-item .plan-del { cursor:pointer; }
+.plan-item .plan-text { cursor:text; }
+
+/* Weekly todos */
+.week-todos {
+  margin-top:1.25rem;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden;
+}
+.week-todos-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 18px 12px; border-bottom:1px solid var(--border-light);
+  background:var(--surface2);
+}
+.week-todos-title {
+  font-family:'Noto Serif KR',serif; font-size:15px; color:var(--text);
+  display:flex; align-items:center; gap:8px;
+}
+.week-todos-badge {
+  font-family:'JetBrains Mono',monospace; font-size:10px;
+  background:var(--accent); color:#fff; border-radius:20px;
+  padding:1px 7px; font-weight:500; opacity:.85;
+}
+.week-todos-body { padding:12px 14px; display:flex; flex-direction:column; gap:5px; }
+.week-todo-item {
+  display:flex; align-items:flex-start; gap:9px;
+  padding:7px 10px; border-radius:var(--radius-sm);
+  border:1px solid var(--border-light); background:var(--bg);
+  transition:opacity .2s, border-color .15s; position:relative; overflow:hidden;
+}
+.week-todo-item:hover { border-color:var(--border); }
+.week-todo-item.done { opacity:.42; }
+.week-todo-bar { position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--accent); border-radius:3px 0 0 3px; }
+.week-todo-check {
+  width:15px; height:15px; border-radius:3px; border:1.5px solid var(--border);
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; margin-top:1px; transition:all .15s; background:transparent;
+}
+.week-todo-check.checked { background:var(--accent); border-color:var(--accent); }
+.week-todo-check.checked::after {
+  content:''; width:8px; height:5px;
+  border-left:1.5px solid #fff; border-bottom:1.5px solid #fff;
+  transform:rotate(-45deg) translate(1px,-1px); display:block;
+}
+.week-todo-text { font-size:12.5px; color:var(--text); flex:1; line-height:1.45; word-break:break-all; }
+.week-todo-del {
+  background:none; border:none; cursor:pointer; color:var(--text-faint);
+  font-size:14px; padding:0; opacity:0; transition:opacity .12s,color .12s; flex-shrink:0;
+}
+.week-todo-item:hover .week-todo-del { opacity:1; }
+.week-todo-del:hover { color:var(--sun); }
+.week-todo-add {
+  display:flex; align-items:center; gap:8px; padding:8px 10px;
+  border:1px dashed var(--border-light); border-radius:var(--radius-sm);
+  cursor:pointer; transition:all .15s; margin-top:2px;
+}
+.week-todo-add:hover { border-color:var(--accent); }
+.week-todo-add-icon { font-size:13px; color:var(--text-faint); transition:color .15s; }
+.week-todo-add:hover .week-todo-add-icon { color:var(--accent); }
+.week-todo-add-label { font-size:11.5px; color:var(--text-faint); transition:color .15s; }
+.week-todo-add:hover .week-todo-add-label { color:var(--accent); }
+.week-todo-progress {
+  height:3px; background:var(--border-light);
+  border-radius:0 0 var(--radius) var(--radius); overflow:hidden;
+}
+.week-todo-progress-bar {
+  height:100%; background:var(--accent); border-radius:0 0 var(--radius) var(--radius);
+  transition:width .35s ease;
+}
+.week-todo-inline-add {
+  border-radius:var(--radius-sm); border:1px solid var(--accent);
+  background:var(--surface); padding:6px 10px;
+}
+
+/* Stats view */
+.stats-grid {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:1.25rem; margin-bottom:1.5rem;
+}
+.stat-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.5rem 1.5rem 1.25rem;
+  box-shadow:var(--shadow); display:flex; flex-direction:column; gap:14px;
+}
+.stat-card-header {
+  display:flex; align-items:baseline; justify-content:space-between;
+}
+.stat-card-label {
+  font-size:11px; font-weight:500; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--text-muted); font-family:'JetBrains Mono',monospace;
+}
+.stat-card-period { font-size:10.5px; color:var(--text-faint); font-family:'JetBrains Mono',monospace; }
+.stat-percent {
+  font-family:'Noto Serif KR',serif; font-size:42px; line-height:1;
+  color:var(--text); display:flex; align-items:baseline; gap:5px;
+}
+.stat-percent-suffix { font-size:18px; color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
+.stat-count {
+  font-size:13px; color:var(--text-muted); font-family:'JetBrains Mono',monospace;
+}
+.stat-count-done { color:var(--accent); font-weight:500; }
+.stat-bar {
+  height:8px; background:var(--surface2); border-radius:4px;
+  overflow:hidden; border:1px solid var(--border-light);
+}
+.stat-bar-fill {
+  height:100%; background:var(--accent); border-radius:4px;
+  transition:width .5s ease;
+}
+.stat-empty { font-size:13px; color:var(--text-faint); font-style:italic; padding:8px 0; }
+
+.stats-section-title {
+  font-family:'Noto Serif KR',serif; font-size:18px; color:var(--text);
+  margin:2rem 0 1rem; padding-bottom:8px; border-bottom:1px solid var(--border-light);
+}
+
+/* Backup section */
+.backup-row {
+  display:flex; gap:10px; flex-wrap:wrap;
+}
+.backup-btn {
+  padding:9px 16px; font-size:12.5px; font-family:'Noto Sans KR',sans-serif;
+  background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm);
+  cursor:pointer; color:var(--text); transition:all .15s; font-weight:400;
+}
+.backup-btn:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+.backup-btn.danger:hover { background:var(--sun); border-color:var(--sun); }
+.backup-hint { font-size:11.5px; color:var(--text-faint); margin-top:4px; line-height:1.5; }
+
+/* Live clock */
+.header-right { display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+.live-clock {
+  display:flex; align-items:baseline; gap:8px;
+  font-family:'JetBrains Mono',monospace;
+  color:var(--text-muted); user-select:none;
+}
+.live-clock-date { font-size:11px; letter-spacing:.05em; }
+.live-clock-time {
+  font-size:15px; font-weight:500; color:var(--text);
+  letter-spacing:.04em;
+}
+.live-clock-sec { color:var(--text-muted); font-size:13px; }
+@media(max-width:520px){
+  .header { flex-direction:column; align-items:flex-start; gap:14px; }
+  .header-right { align-items:flex-start; width:100%; }
+}
+
+/* Stats chart */
+.stat-chart-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.5rem 1.5rem 1.25rem;
+  box-shadow:var(--shadow); margin-bottom:1.25rem;
+}
+.stat-chart-header {
+  display:flex; align-items:baseline; justify-content:space-between;
+  margin-bottom:1.25rem;
+}
+.stat-chart-title {
+  font-family:'Noto Serif KR',serif; font-size:16px; color:var(--text);
+}
+.stat-chart-legend {
+  display:flex; gap:14px; font-family:'JetBrains Mono',monospace;
+  font-size:11px; color:var(--text-muted);
+}
+.legend-dot {
+  display:inline-block; width:10px; height:10px; border-radius:2px;
+  margin-right:5px; vertical-align:middle;
+}
+.stat-chart-svg { width:100%; height:auto; display:block; overflow:visible; }
+.chart-bar-total { fill:var(--border-light); transition:opacity .2s; }
+.chart-bar-done { fill:var(--accent); transition:opacity .2s; }
+.chart-bar-group:hover .chart-bar-total,
+.chart-bar-group:hover .chart-bar-done { opacity:.78; }
+.chart-bar-label {
+  font-family:'JetBrains Mono',monospace; font-size:9.5px;
+  fill:var(--text-faint); text-anchor:middle;
+}
+.chart-bar-value {
+  font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:500;
+  fill:var(--text); text-anchor:middle;
+}
+.chart-grid-line { stroke:var(--border-light); stroke-width:1; stroke-dasharray:2 3; }
+.chart-axis-label {
+  font-family:'JetBrains Mono',monospace; font-size:9.5px;
+  fill:var(--text-muted); text-anchor:end;
+}
+.chart-today-dot { fill:var(--sun); }
+.chart-empty {
+  font-size:13px; color:var(--text-faint); font-style:italic;
+  text-align:center; padding:2.5rem 0;
+}
+
+/* DOW chart (요일별) */
+.dow-chart-row {
+  display:grid; grid-template-columns:22px 1fr 38px 40px;
+  gap:10px; align-items:center; padding:5px 0;
+}
+.dow-chart-row.no-data { opacity:.55; }
+.dow-chart-label {
+  font-family:'JetBrains Mono',monospace; font-size:11px;
+  color:var(--text-muted); text-align:center; flex-shrink:0;
+}
+.dow-chart-bar-bg {
+  height:18px; background:var(--surface2);
+  border-radius:9px; overflow:hidden; position:relative;
+  border:1px solid var(--border-light);
+}
+.dow-chart-bar-fill {
+  height:100%; background:var(--accent);
+  border-radius:9px; transition:width .55s cubic-bezier(.4,1.2,.5,1);
+  min-width:0;
+}
+.dow-chart-bar-pct {
+  font-family:'JetBrains Mono',monospace; font-size:11.5px;
+  color:var(--accent); font-weight:500; text-align:right;
+}
+.dow-chart-bar-pct.empty {
+  color:var(--text-faint); font-weight:400;
+}
+.dow-chart-count {
+  font-family:'JetBrains Mono',monospace; font-size:10.5px;
+  color:var(--text-muted); text-align:right;
+}
+
+/* Pomodoro widget */
+.pomo-fab {
+  position:fixed; bottom:24px; right:24px; z-index:1000;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); box-shadow:0 6px 24px rgba(28,26,23,0.15);
+  font-family:'JetBrains Mono',monospace; user-select:none;
+  transition:all .25s cubic-bezier(.4,1.2,.5,1); overflow:hidden;
+}
+[data-theme="dark"] .pomo-fab { box-shadow:0 6px 24px rgba(0,0,0,0.5); }
+.pomo-fab.minimized {
+  width:auto; min-width:120px; padding:10px 16px;
+  cursor:pointer; display:flex; align-items:center; gap:10px;
+}
+.pomo-fab.minimized:hover { transform:translateY(-2px); border-color:var(--accent); }
+.pomo-fab-icon {
+  font-size:16px; line-height:1;
+  transition:transform .3s;
+}
+.pomo-fab.running .pomo-fab-icon { animation:pomo-pulse 2s ease-in-out infinite; }
+@keyframes pomo-pulse {
+  0%,100% { transform:scale(1); opacity:1; }
+  50% { transform:scale(1.15); opacity:.7; }
+}
+.pomo-fab-mini-time {
+  font-size:14px; font-weight:500; color:var(--text);
+  letter-spacing:.05em;
+}
+.pomo-fab-mini-label {
+  font-size:9.5px; color:var(--text-muted);
+  letter-spacing:.1em; text-transform:uppercase;
+}
+.pomo-fab.expanded {
+  width:280px; padding:18px 20px 20px;
+}
+.pomo-fab-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:14px;
+}
+.pomo-fab-title {
+  font-family:'Noto Serif KR',serif; font-size:15px; color:var(--text);
+  display:flex; align-items:center; gap:7px;
+}
+.pomo-fab-close {
+  background:none; border:none; cursor:pointer;
+  color:var(--text-faint); font-size:18px; padding:0;
+  width:22px; height:22px; display:flex; align-items:center; justify-content:center;
+  border-radius:4px; transition:all .15s;
+}
+.pomo-fab-close:hover { background:var(--surface2); color:var(--text); }
+.pomo-fab-settings-btn {
+  background:none; border:none; cursor:pointer;
+  color:var(--text-faint); font-size:14px; padding:0;
+  width:22px; height:22px; display:flex; align-items:center; justify-content:center;
+  border-radius:4px; transition:all .15s; margin-right:2px;
+}
+.pomo-fab-settings-btn:hover { background:var(--surface2); color:var(--text); }
+.pomo-fab-settings-btn.active { color:var(--accent); background:var(--surface2); }
+.pomo-header-actions { display:flex; align-items:center; gap:2px; }
+
+/* Pomo settings panel */
+.pomo-settings {
+  display:flex; flex-direction:column; gap:11px;
+  padding:6px 0 4px;
+}
+.pomo-settings-title {
+  font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--text-muted); font-family:'JetBrains Mono',monospace;
+  text-align:center; margin-bottom:2px;
+}
+.pomo-setting-row {
+  display:flex; align-items:center; justify-content:space-between;
+  gap:10px;
+}
+.pomo-setting-label {
+  font-size:12px; color:var(--text);
+  display:flex; align-items:center; gap:7px;
+}
+.pomo-setting-label-dot {
+  width:9px; height:9px; border-radius:50%;
+}
+.pomo-input-wrap {
+  display:flex; align-items:center; gap:2px;
+  background:var(--surface2); border:1px solid var(--border-light);
+  border-radius:var(--radius-sm); padding:2px;
+}
+.pomo-step-btn {
+  width:24px; height:24px; background:transparent;
+  border:none; cursor:pointer; color:var(--text-muted);
+  font-size:15px; line-height:1; padding:0; font-weight:500;
+  border-radius:4px; transition:all .12s;
+  display:flex; align-items:center; justify-content:center;
+}
+.pomo-step-btn:hover:not(:disabled) { background:var(--surface); color:var(--text); }
+.pomo-step-btn:disabled { opacity:.35; cursor:not-allowed; }
+.pomo-num-input {
+  width:40px; text-align:center; border:none; background:transparent;
+  font-family:'JetBrains Mono',monospace; font-size:13px;
+  font-weight:500; color:var(--text); padding:2px 0;
+  -moz-appearance:textfield;
+}
+.pomo-num-input::-webkit-inner-spin-button,
+.pomo-num-input::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+.pomo-num-input:focus { outline:none; color:var(--accent); }
+.pomo-input-suffix {
+  font-size:10.5px; color:var(--text-faint);
+  font-family:'JetBrains Mono',monospace; padding:0 4px 0 1px;
+}
+.pomo-settings-footer {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-top:6px; padding-top:10px;
+  border-top:1px solid var(--border-light);
+}
+.pomo-settings-reset-btn {
+  background:none; border:none; cursor:pointer;
+  color:var(--text-faint); font-size:10.5px;
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:.04em; padding:4px 6px;
+  border-radius:var(--radius-sm); transition:all .12s;
+}
+.pomo-settings-reset-btn:hover { color:var(--sun); }
+.pomo-settings-done-btn {
+  background:var(--accent); color:#fff; border:1px solid var(--accent);
+  padding:6px 14px; font-size:11px; cursor:pointer;
+  border-radius:var(--radius-sm); transition:all .15s;
+  font-family:'JetBrains Mono',monospace; letter-spacing:.04em;
+  font-weight:500;
+}
+.pomo-settings-done-btn:hover { filter:brightness(1.1); }
+.pomo-settings-note {
+  font-size:10px; color:var(--text-faint); font-style:italic;
+  text-align:center; line-height:1.4;
+}
+.pomo-mode-tabs {
+  display:flex; background:var(--surface2); border:1px solid var(--border-light);
+  border-radius:var(--radius-sm); padding:3px; margin-bottom:16px;
+}
+.pomo-mode-btn {
+  flex:1; padding:6px 0; font-size:10.5px; font-family:'JetBrains Mono',monospace;
+  border:none; background:transparent; border-radius:5px; cursor:pointer;
+  color:var(--text-muted); transition:all .18s;
+  letter-spacing:.04em;
+}
+.pomo-mode-btn.active {
+  background:var(--surface); color:var(--text); font-weight:500;
+  box-shadow:var(--shadow-sm);
+}
+.pomo-display {
+  text-align:center; margin-bottom:18px;
+  position:relative;
+}
+.pomo-ring-wrap { position:relative; width:160px; height:160px; margin:0 auto; }
+.pomo-ring-svg { transform:rotate(-90deg); width:100%; height:100%; }
+.pomo-ring-bg { fill:none; stroke:var(--border-light); stroke-width:6; }
+.pomo-ring-fg {
+  fill:none; stroke:var(--accent); stroke-width:6;
+  stroke-linecap:round; transition:stroke-dashoffset .3s linear;
+}
+.pomo-fab[data-mode="break"] .pomo-ring-fg { stroke:var(--sat); }
+.pomo-fab[data-mode="long"] .pomo-ring-fg { stroke:var(--sun); }
+.pomo-time-display {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:2px;
+}
+.pomo-time {
+  font-family:'JetBrains Mono',monospace;
+  font-size:30px; font-weight:500; color:var(--text);
+  letter-spacing:.02em;
+}
+.pomo-mode-label {
+  font-size:9.5px; letter-spacing:.15em; text-transform:uppercase;
+  color:var(--text-muted);
+}
+.pomo-controls {
+  display:flex; gap:8px; justify-content:center; margin-bottom:12px;
+}
+.pomo-btn {
+  padding:8px 18px; font-size:12px;
+  font-family:'JetBrains Mono',monospace; font-weight:500;
+  border:1px solid var(--border); background:var(--surface2);
+  border-radius:var(--radius-sm); cursor:pointer; color:var(--text);
+  transition:all .15s; letter-spacing:.04em;
+}
+.pomo-btn:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+.pomo-btn.primary {
+  background:var(--accent); color:#fff; border-color:var(--accent);
+}
+.pomo-btn.primary:hover {
+  filter:brightness(1.1);
+}
+.pomo-btn.ghost { background:transparent; }
+.pomo-btn.ghost:hover { background:var(--surface2); color:var(--text); border-color:var(--border); }
+.pomo-session-info {
+  display:flex; justify-content:space-between; align-items:center;
+  padding-top:10px; border-top:1px solid var(--border-light);
+  font-size:10.5px; color:var(--text-muted);
+}
+.pomo-session-count {
+  display:flex; gap:4px;
+}
+.pomo-session-dot {
+  width:7px; height:7px; border-radius:50%;
+  background:var(--border-light);
+}
+.pomo-session-dot.filled { background:var(--accent); }
+@media(max-width:520px){
+  .pomo-fab { bottom:14px; right:14px; }
+  .pomo-fab.expanded { width:calc(100vw - 28px); max-width:280px; }
+}
+
+/* FX animations */
+@keyframes fx-burst{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--tx),var(--ty)) scale(.2);opacity:0}}
+.fx-particle{position:fixed;border-radius:50%;pointer-events:none;z-index:9999;animation:fx-burst .55s ease-out forwards;}
+@keyframes fx-ripple{0%{transform:translate(-50%,-50%) scale(0);opacity:.7}100%{transform:translate(-50%,-50%) scale(2.8);opacity:0}}
+.fx-ripple{position:fixed;border-radius:50%;pointer-events:none;z-index:9998;animation:fx-ripple .5s ease-out forwards;}
+@keyframes fx-confetti{0%{transform:translate(0,0) rotate(0deg);opacity:1}100%{transform:translate(var(--tx),var(--ty)) rotate(var(--rot));opacity:0}}
+.fx-confetti{position:fixed;pointer-events:none;z-index:9999;border-radius:1px;animation:fx-confetti .7s ease-out forwards;}
+@keyframes fx-star{0%{transform:translate(0,0);opacity:1}60%{opacity:1}100%{transform:translate(var(--tx),var(--ty));opacity:0}}
+.fx-star{position:fixed;pointer-events:none;z-index:9999;line-height:1;animation:fx-star .6s ease-out forwards;}
+@keyframes fx-bubble{0%{transform:translate(0,0);opacity:.9}50%{opacity:.6}100%{transform:translate(var(--tx),var(--ty));opacity:0}}
+.fx-bubble{position:fixed;border-radius:50%;pointer-events:none;z-index:9999;animation:fx-bubble .65s ease-out forwards;}
+@keyframes fx-flash{0%{opacity:.85;transform:translate(-50%,-50%) scale(.3)}40%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}100%{opacity:0;transform:translate(-50%,-50%) scale(2.2)}}
+.fx-flash{position:fixed;border-radius:50%;pointer-events:none;z-index:9998;animation:fx-flash .5s ease-out forwards;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="header">
+  <div class="logo">
+    <span class="logo-label">Personal</span>
+    <span class="logo-name">Planner</span>
+  </div>
+  <div class="header-right">
+    <div class="live-clock" id="live-clock">
+      <span class="live-clock-date" id="clock-date">—</span>
+      <span class="live-clock-time" id="clock-time">--:--<span class="live-clock-sec" id="clock-sec">:--</span></span>
+    </div>
+    <div class="view-toggle">
+      <button class="view-btn active" id="btn-month" onclick="switchView('month')">달력</button>
+      <button class="view-btn" id="btn-week" onclick="switchView('week')">주간</button>
+      <button class="view-btn" id="btn-stats" onclick="switchView('stats')">통계</button>
+      <button class="view-btn" id="btn-settings" onclick="toggleSettings()">설정</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings panel -->
+<div class="settings-panel" id="settings-panel">
+  <div class="settings-title">설정</div>
+  <div class="settings-grid">
+
+    <!-- Week start -->
+    <div class="setting-group">
+      <div class="setting-label">주 시작 요일</div>
+      <div class="week-start-toggle">
+        <button class="ws-btn" id="ws-mon" onclick="setWeekStart('mon')">월 → 일</button>
+        <button class="ws-btn" id="ws-sun" onclick="setWeekStart('sun')">일 → 토</button>
+      </div>
+    </div>
+
+    <!-- Theme -->
+    <div class="setting-group">
+      <div class="setting-label">테마</div>
+      <div class="theme-grid">
+        <div class="theme-swatch" data-theme="default" onclick="setTheme('default')" title="기본">
+          <div class="sw-half"><div class="sw-left" style="background:#F5F2EC"></div><div class="sw-right" style="background:#2C4A3E"></div></div>
+        </div>
+        <div class="theme-swatch" data-theme="dark" onclick="setTheme('dark')" title="다크">
+          <div class="sw-half"><div class="sw-left" style="background:#16151A"></div><div class="sw-right" style="background:#7B9E87"></div></div>
+        </div>
+        <div class="theme-swatch" data-theme="mint" onclick="setTheme('mint')" title="민트">
+          <div class="sw-half"><div class="sw-left" style="background:#EEF7F4"></div><div class="sw-right" style="background:#2A7A62"></div></div>
+        </div>
+        <div class="theme-swatch" data-theme="sand" onclick="setTheme('sand')" title="샌드">
+          <div class="sw-half"><div class="sw-left" style="background:#F2EDE4"></div><div class="sw-right" style="background:#8B5E2C"></div></div>
+        </div>
+        <div class="theme-swatch" data-theme="violet" onclick="setTheme('violet')" title="바이올렛">
+          <div class="sw-half"><div class="sw-left" style="background:#F0EEF8"></div><div class="sw-right" style="background:#5A48B8"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Effect picker -->
+    <div class="setting-group setting-group-full">
+      <div class="setting-label">체크 완료 이펙트</div>
+      <div class="effect-list" id="effect-list">
+
+        <div class="effect-row" data-effect="confetti" onclick="selectEffect('confetti',event)">
+          <div class="effect-radio" onclick="selectEffect('confetti',event)"><div class="effect-radio-dot"></div></div>
+          <div class="effect-info">
+            <div class="effect-name">🎉 컨페티</div>
+            <div class="effect-desc">색종이 조각과 파티클이 사방으로 흩날립니다</div>
+          </div>
+        </div>
+
+        <div class="effect-row" data-effect="stars" onclick="selectEffect('stars',event)">
+          <div class="effect-radio" onclick="selectEffect('stars',event)"><div class="effect-radio-dot"></div></div>
+          <div class="effect-info">
+            <div class="effect-name">⭐ 별똥별</div>
+            <div class="effect-desc">별과 반짝임이 사방으로 튀어나옵니다</div>
+          </div>
+        </div>
+
+        <div class="effect-row" data-effect="bubbles" onclick="selectEffect('bubbles',event)">
+          <div class="effect-radio" onclick="selectEffect('bubbles',event)"><div class="effect-radio-dot"></div></div>
+          <div class="effect-info">
+            <div class="effect-name">🫧 버블</div>
+            <div class="effect-desc">투명한 버블들이 퍼져나가다 사라집니다</div>
+          </div>
+        </div>
+
+        <div class="effect-row" data-effect="flash" onclick="selectEffect('flash',event)">
+          <div class="effect-radio" onclick="selectEffect('flash',event)"><div class="effect-radio-dot"></div></div>
+          <div class="effect-info">
+            <div class="effect-name">✨ 플래시</div>
+            <div class="effect-desc">은은한 빛이 번쩍이며 퍼지는 심플한 이펙트</div>
+          </div>
+        </div>
+
+        <div class="effect-row" data-effect="none" onclick="selectEffect('none',event)">
+          <div class="effect-radio" onclick="selectEffect('none',event)"><div class="effect-radio-dot"></div></div>
+          <div class="effect-info">
+            <div class="effect-name">— 없음</div>
+            <div class="effect-desc">이펙트 없이 조용하게 체크만 됩니다</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Intensity slider -->
+      <div style="margin-top:12px;padding:14px 16px;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid var(--border-light)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);font-family:'JetBrains Mono',monospace">이펙트 강도</span>
+          <span style="font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--accent);font-weight:500" id="intensity-label">보통</span>
+        </div>
+        <input type="range" min="1" max="10" step="0.01" id="intensity-slider"
+          style="width:100%;accent-color:var(--accent);cursor:pointer"
+          oninput="setIntensity(this.value)">
+        <div style="display:flex;justify-content:space-between;margin-top:4px">
+          <span style="font-size:10px;color:var(--text-faint);font-family:'JetBrains Mono',monospace">약하게</span>
+          <span style="font-size:10px;color:var(--text-faint);font-family:'JetBrains Mono',monospace">🔥 극한</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Backup / restore -->
+    <div class="setting-group setting-group-full">
+      <div class="setting-label">백업 / 복원</div>
+      <div class="backup-row">
+        <button class="backup-btn" onclick="exportData()">📥 JSON 내보내기</button>
+        <button class="backup-btn" onclick="document.getElementById('import-file').click()">📤 JSON 불러오기 (병합)</button>
+        <button class="backup-btn danger" onclick="document.getElementById('import-file-overwrite').click()">⚠️ JSON 불러오기 (덮어쓰기)</button>
+        <input type="file" id="import-file" accept="application/json,.json" style="display:none" onchange="importData(event,'merge')">
+        <input type="file" id="import-file-overwrite" accept="application/json,.json" style="display:none" onchange="importData(event,'overwrite')">
+      </div>
+      <div class="backup-hint">
+        파일을 다른 폴더로 옮기거나 새 버전으로 덮어쓰기 전, JSON으로 백업해두면 안전합니다.<br>
+        병합: 기존 플랜은 보존하면서 백업 데이터를 합칩니다. 덮어쓰기: 현재 모든 데이터를 백업 데이터로 교체합니다.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Nav row -->
+<div class="nav-row" id="nav-row">
+  <button class="nav-btn" onclick="navPrev()">&#8592;</button>
+  <span class="period-label" id="period-label"></span>
+  <button class="nav-btn" onclick="navNext()">&#8594;</button>
+  <button class="today-btn" onclick="goToday()">오늘</button>
+</div>
+
+<div id="view-container"></div>
+</div>
+
+<!-- Pomodoro floating widget -->
+<div class="pomo-fab minimized" id="pomo-fab" data-mode="work">
+  <!-- Minimized view -->
+  <div class="pomo-fab-mini" id="pomo-mini" onclick="pomoExpand()">
+    <span class="pomo-fab-icon">🍅</span>
+    <div style="display:flex;flex-direction:column;gap:1px">
+      <span class="pomo-fab-mini-time" id="pomo-mini-time">25:00</span>
+      <span class="pomo-fab-mini-label" id="pomo-mini-label">Pomodoro</span>
+    </div>
+  </div>
+  <!-- Expanded view (hidden by default) -->
+  <div class="pomo-fab-expanded" id="pomo-expanded" style="display:none">
+    <div class="pomo-fab-header">
+      <div class="pomo-fab-title">🍅 뽀모도로</div>
+      <div class="pomo-header-actions">
+        <button class="pomo-fab-settings-btn" id="pomo-settings-btn" onclick="pomoToggleSettings()" title="시간 설정">⚙</button>
+        <button class="pomo-fab-close" onclick="pomoMinimize()" title="접기">−</button>
+      </div>
+    </div>
+    <!-- Main timer view -->
+    <div id="pomo-main-view">
+    <div class="pomo-mode-tabs">
+      <button class="pomo-mode-btn active" id="pomo-tab-work" onclick="pomoSetMode('work')">집중 25분</button>
+      <button class="pomo-mode-btn" id="pomo-tab-break" onclick="pomoSetMode('break')">휴식 5분</button>
+      <button class="pomo-mode-btn" id="pomo-tab-long" onclick="pomoSetMode('long')">긴휴식 15분</button>
+    </div>
+    <div class="pomo-display">
+      <div class="pomo-ring-wrap">
+        <svg class="pomo-ring-svg" viewBox="0 0 100 100">
+          <circle class="pomo-ring-bg" cx="50" cy="50" r="46"></circle>
+          <circle class="pomo-ring-fg" id="pomo-ring-fg" cx="50" cy="50" r="46"
+            stroke-dasharray="289.03" stroke-dashoffset="0"></circle>
+        </svg>
+        <div class="pomo-time-display">
+          <div class="pomo-time" id="pomo-time">25:00</div>
+          <div class="pomo-mode-label" id="pomo-mode-label">집중</div>
+        </div>
+      </div>
+    </div>
+    <div class="pomo-controls">
+      <button class="pomo-btn primary" id="pomo-start-btn" onclick="pomoToggle()">시작</button>
+      <button class="pomo-btn ghost" onclick="pomoReset()">초기화</button>
+    </div>
+    <div class="pomo-session-info">
+      <span>오늘 완료: <span id="pomo-today-count" style="color:var(--text);font-weight:500">0</span>회</span>
+      <div class="pomo-session-count" id="pomo-session-dots">
+        <span class="pomo-session-dot"></span>
+        <span class="pomo-session-dot"></span>
+        <span class="pomo-session-dot"></span>
+        <span class="pomo-session-dot"></span>
+      </div>
+    </div>
+    </div>
+    <!-- Settings view (hidden by default) -->
+    <div id="pomo-settings-view" class="pomo-settings" style="display:none">
+      <div class="pomo-settings-title">시간 설정 (분)</div>
+      <div class="pomo-setting-row">
+        <div class="pomo-setting-label">
+          <span class="pomo-setting-label-dot" style="background:var(--accent)"></span>
+          집중
+        </div>
+        <div class="pomo-input-wrap">
+          <button class="pomo-step-btn" onclick="pomoStepDuration('work',-1)">−</button>
+          <input type="number" class="pomo-num-input" id="pomo-input-work"
+                 min="1" max="180" inputmode="numeric"
+                 oninput="pomoOnInputChange('work',this.value)"
+                 onblur="pomoOnInputCommit('work',this)">
+          <span class="pomo-input-suffix">분</span>
+          <button class="pomo-step-btn" onclick="pomoStepDuration('work',1)">+</button>
+        </div>
+      </div>
+      <div class="pomo-setting-row">
+        <div class="pomo-setting-label">
+          <span class="pomo-setting-label-dot" style="background:var(--sat)"></span>
+          짧은 휴식
+        </div>
+        <div class="pomo-input-wrap">
+          <button class="pomo-step-btn" onclick="pomoStepDuration('break',-1)">−</button>
+          <input type="number" class="pomo-num-input" id="pomo-input-break"
+                 min="1" max="180" inputmode="numeric"
+                 oninput="pomoOnInputChange('break',this.value)"
+                 onblur="pomoOnInputCommit('break',this)">
+          <span class="pomo-input-suffix">분</span>
+          <button class="pomo-step-btn" onclick="pomoStepDuration('break',1)">+</button>
+        </div>
+      </div>
+      <div class="pomo-setting-row">
+        <div class="pomo-setting-label">
+          <span class="pomo-setting-label-dot" style="background:var(--sun)"></span>
+          긴 휴식
+        </div>
+        <div class="pomo-input-wrap">
+          <button class="pomo-step-btn" onclick="pomoStepDuration('long',-1)">−</button>
+          <input type="number" class="pomo-num-input" id="pomo-input-long"
+                 min="1" max="180" inputmode="numeric"
+                 oninput="pomoOnInputChange('long',this.value)"
+                 onblur="pomoOnInputCommit('long',this)">
+          <span class="pomo-input-suffix">분</span>
+          <button class="pomo-step-btn" onclick="pomoStepDuration('long',1)">+</button>
+        </div>
+      </div>
+      <div class="pomo-settings-note" id="pomo-settings-note"></div>
+      <div class="pomo-settings-footer">
+        <button class="pomo-settings-reset-btn" onclick="pomoResetDurations()">기본값으로 (25/5/15)</button>
+        <button class="pomo-settings-done-btn" onclick="pomoToggleSettings()">완료</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PALETTE=['#2C4A3E','#8B5E3C','#4A3B6B','#2E6B8A','#7A3B3B','#3B6B4A','#6B4A2C','#3B4A6B'];
+
+let settings=JSON.parse(localStorage.getItem('planner-settings')||'{}');
+settings.weekStart=settings.weekStart||'mon';
+settings.theme=settings.theme||'default';
+settings.effect=settings.effect||'confetti';
+settings.intensity=settings.intensity||5;
+
+let plans=JSON.parse(localStorage.getItem('planner-plans')||'{}');
+let currentView='month';
+let viewDate=new Date();
+
+function save(){ localStorage.setItem('planner-plans',JSON.stringify(plans)); }
+function saveSettings(){ localStorage.setItem('planner-settings',JSON.stringify(settings)); }
+function key(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+function todayParts(){ const t=new Date(); return{y:t.getFullYear(),m:t.getMonth(),d:t.getDate()}; }
+function getPlans(k){ if(!plans[k]) plans[k]=[]; return plans[k]; }
+function colorFor(k,i){ let h=0; for(let c of k) h=(h*31+c.charCodeAt(0))&0xffffffff; return PALETTE[(Math.abs(h)+i*3)%PALETTE.length]; }
+
+const DOWS_MON=['월','화','수','목','금','토','일'];
+const DOWS_SUN=['일','월','화','수','목','금','토'];
+function getDOWS(){ return settings.weekStart==='mon'?DOWS_MON:DOWS_SUN; }
+
+function getWeekStart(d){
+  const c=new Date(d);
+  if(settings.weekStart==='mon'){
+    const day=c.getDay(); c.setDate(c.getDate()+(day===0?-6:1-day));
+  } else { c.setDate(c.getDate()-c.getDay()); }
+  return c;
+}
+function getMonthStartDow(y,m){
+  const raw=new Date(y,m,1).getDay();
+  return settings.weekStart==='mon'?(raw===0?6:raw-1):raw;
+}
+function satIdx(){ return settings.weekStart==='mon'?5:6; }
+function sunIdx(){ return settings.weekStart==='mon'?6:0; }
+function dowColor(i){
+  if(i===satIdx()) return 'var(--sat)';
+  if(i===sunIdx()) return 'var(--sun)';
+  return '';
+}
+
+function applySettings(){
+  if(settings.theme==='default') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme',settings.theme);
+  document.querySelectorAll('.theme-swatch').forEach(s=>s.classList.toggle('active',s.dataset.theme===settings.theme));
+  document.getElementById('ws-mon').classList.toggle('active',settings.weekStart==='mon');
+  document.getElementById('ws-sun').classList.toggle('active',settings.weekStart==='sun');
+  document.querySelectorAll('.effect-row').forEach(r=>r.classList.toggle('selected',r.dataset.effect===settings.effect));
+  // intensity slider
+  const slider=document.getElementById('intensity-slider');
+  const label=document.getElementById('intensity-label');
+  if(slider){ slider.value=settings.intensity; }
+  if(label){ label.textContent=intensityLabel(settings.intensity); }
+}
+
+function intensityLabel(v){
+  const n=parseFloat(v);
+  if(n<=1.5) return '아주 약하게';
+  if(n<=3) return '약하게';
+  if(n<=4.5) return '살짝 약하게';
+  if(n<=5.5) return '보통';
+  if(n<=7) return '살짝 강하게';
+  if(n<=8.5) return '강하게';
+  if(n<=9.5) return '매우 강하게';
+  return '🔥 극한';
+}
+
+function setIntensity(v){
+  settings.intensity=parseFloat(v); saveSettings();
+  const label=document.getElementById('intensity-label');
+  if(label) label.textContent=intensityLabel(settings.intensity);
+  // preview the effect at slider thumb position
+  const slider=document.getElementById('intensity-slider');
+  if(slider&&settings.effect!=='none'){
+    const rect=slider.getBoundingClientRect();
+    const pct=(settings.intensity-1)/9;
+    const x=rect.left+rect.width*pct; const y=rect.top+rect.height/2;
+    fireEffect(x,y,settings.effect);
+  }
+}
+
+function toggleSettings(){
+  const panel=document.getElementById('settings-panel');
+  const btnS=document.getElementById('btn-settings');
+  const isOpen=panel.classList.toggle('open');
+  btnS.classList.toggle('active',isOpen);
+  if(isOpen){
+    currentView='settings';
+    document.getElementById('nav-row').style.display='none';
+    document.getElementById('view-container').innerHTML='';
+    document.getElementById('btn-month').classList.remove('active');
+    document.getElementById('btn-week').classList.remove('active');
+    document.getElementById('btn-stats').classList.remove('active');
+  } else {
+    currentView='month';
+    document.getElementById('nav-row').style.display='';
+    document.getElementById('btn-month').classList.add('active');
+    render();
+  }
+}
+
+function switchView(v){
+  const panel=document.getElementById('settings-panel');
+  if(panel.classList.contains('open')){
+    panel.classList.remove('open');
+    document.getElementById('btn-settings').classList.remove('active');
+    document.getElementById('nav-row').style.display='';
+  }
+  currentView=v;
+  document.getElementById('btn-month').classList.toggle('active',v==='month');
+  document.getElementById('btn-week').classList.toggle('active',v==='week');
+  document.getElementById('btn-stats').classList.toggle('active',v==='stats');
+  document.getElementById('btn-settings').classList.remove('active');
+  // 통계 탭은 기간 네비게이션 불필요
+  document.getElementById('nav-row').style.display = (v==='stats') ? 'none' : '';
+  render();
+}
+
+function navPrev(){
+  if(currentView==='settings') return;
+  if(currentView==='month'){viewDate.setDate(1);viewDate.setMonth(viewDate.getMonth()-1);}
+  else viewDate.setDate(viewDate.getDate()-7);
+  render();
+}
+function navNext(){
+  if(currentView==='settings') return;
+  if(currentView==='month'){viewDate.setDate(1);viewDate.setMonth(viewDate.getMonth()+1);}
+  else viewDate.setDate(viewDate.getDate()+7);
+  render();
+}
+function goToday(){ viewDate=new Date(); if(currentView!=='settings') render(); }
+
+const MONTHS=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+
+function render(){ if(currentView==='month') renderMonth(); else if(currentView==='week') renderWeek(); else if(currentView==='stats') renderStats(); }
+
+function renderMonth(){
+  const y=viewDate.getFullYear(),m=viewDate.getMonth();
+  document.getElementById('period-label').textContent=`${y}년 ${MONTHS[m]}`;
+  const t=todayParts();
+  const startDow=getMonthStartDow(y,m);
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const daysInPrev=new Date(y,m,0).getDate();
+  const total=Math.ceil((startDow+daysInMonth)/7)*7;
+  const DOWS=getDOWS();
+  let cells='';
+  for(let i=0;i<total;i++){
+    let day,cm,cy,other=false;
+    if(i<startDow){day=daysInPrev-startDow+1+i;cm=m-1;cy=m===0?y-1:y;other=true;}
+    else if(i>=startDow+daysInMonth){day=i-startDow-daysInMonth+1;cm=m+1;cy=m===11?y+1:y;other=true;}
+    else{day=i-startDow+1;cm=m;cy=y;}
+    const am=((cm%12)+12)%12;
+    const ay=cm<0?cy-1:cm>11?cy+1:cy;
+    const k=key(ay,am,day);
+    const isToday=ay===t.y&&am===t.m&&day===t.d;
+    const ps=getPlans(k);
+    const dots=ps.slice(0,9).map((_,idx)=>`<div class="dot" style="background:${colorFor(k,idx)}"></div>`).join('');
+    const col=dowColor(i%7);
+    cells+=`<div class="month-cell${other?' other-month':''}${isToday?' today':''}" onclick="switchToWeekDay(${ay},${am},${day})">
+      <div class="day-num"${col?` style="color:${col}"`:''}>  ${day}</div>
+      <div class="dot-row">${dots}</div>
+    </div>`;
+  }
+  const dowH=DOWS.map((d,i)=>{const c=dowColor(i);return `<span${c?` style="color:${c}"`:''}>  ${d}</span>`;}).join('');
+  document.getElementById('view-container').innerHTML=`
+  <div class="month-grid">
+    <div class="month-dow">${dowH}</div>
+    <div class="month-days">${cells}</div>
+  </div>`;
+}
+
+function switchToWeekDay(y,m,d){ viewDate=new Date(y,m,d); switchView('week'); }
+
+function renderWeek(){
+  const ws=getWeekStart(viewDate);
+  const we=new Date(ws); we.setDate(we.getDate()+6);
+  const fmt=d=>`${d.getMonth()+1}/${d.getDate()}`;
+  const DOWS=getDOWS();
+  const sL=settings.weekStart==='mon'?'(월)':'(일)';
+  const eL=settings.weekStart==='mon'?'(일)':'(토)';
+  document.getElementById('period-label').textContent=`${ws.getFullYear()}년 ${fmt(ws)}${sL} – ${fmt(we)}${eL}`;
+  const t=todayParts();
+  let headers='',cols='';
+  for(let i=0;i<7;i++){
+    const d=new Date(ws); d.setDate(ws.getDate()+i);
+    const isToday=d.getFullYear()===t.y&&d.getMonth()===t.m&&d.getDate()===t.d;
+    const col=dowColor(i);
+    headers+=`<div class="week-head-cell${isToday?' today':''}">
+      <div class="dow"${col?` style="color:${col}"`:''}>  ${DOWS[i]}</div>
+      <div class="wdate">${d.getDate()}</div>
+    </div>`;
+    const k=key(d.getFullYear(),d.getMonth(),d.getDate());
+    const items=getPlans(k).map((_,idx)=>planHtml(k,idx)).join('');
+    cols+=`<div class="week-col" id="col-${k}">${items}
+      <button class="add-plan-btn" onclick="startAdd('${k}')">+ 추가</button>
+    </div>`;
+  }
+  document.getElementById('view-container').innerHTML=`
+  <div class="week-grid">
+    <div class="week-header">${headers}</div>
+    <div class="week-body">${cols}</div>
+  </div>
+  ${renderWeekTodosHtml(ws)}`;
+  // bind week todo events after DOM insertion
+  bindWeekTodoEvents(ws);
+  bindPlanDragEvents();
+}
+
+/* ── Weekly todos ── */
+function weekKey(ws){ return `week-${ws.getFullYear()}-${String(ws.getMonth()+1).padStart(2,'0')}-${String(ws.getDate()).padStart(2,'0')}`; }
+function getWeekTodos(wk){ if(!plans[wk]) plans[wk]=[]; return plans[wk]; }
+
+function renderWeekTodosHtml(ws){
+  const wk=weekKey(ws);
+  const todos=getWeekTodos(wk);
+  const done=todos.filter(t=>t.done).length;
+  const pct=todos.length?Math.round(done/todos.length*100):0;
+  const badge=todos.length?`<span class="week-todos-badge">${done}/${todos.length}</span>`:'';
+  const items=todos.map((_,idx)=>weekTodoItemHtml(wk,idx)).join('');
+  return `<div class="week-todos" id="week-todos-box">
+    <div class="week-todos-header">
+      <div class="week-todos-title">이번 주 할 일 ${badge}</div>
+    </div>
+    <div class="week-todos-body" id="week-todos-body">
+      ${items}
+      <div class="week-todo-add" id="week-todo-add-btn">
+        <span class="week-todo-add-icon">+</span>
+        <span class="week-todo-add-label">할 일 추가</span>
+      </div>
+    </div>
+    <div class="week-todo-progress"><div class="week-todo-progress-bar" style="width:${pct}%"></div></div>
+  </div>`;
+}
+
+function weekTodoItemHtml(wk,idx){
+  const t=getWeekTodos(wk)[idx]; if(!t) return '';
+  return `<div class="week-todo-item${t.done?' done':''}" id="wtodo-${wk}-${idx}">
+    <div class="week-todo-bar"></div>
+    <div class="week-todo-check${t.done?' checked':''}" data-wk="${wk}" data-idx="${idx}"></div>
+    <span class="week-todo-text" data-edit-wk="${wk}" data-edit-idx="${idx}">${escHtml(t.text)}</span>
+    <button class="week-todo-del" data-del-wk="${wk}" data-del-idx="${idx}" title="삭제">×</button>
+  </div>`;
+}
+
+function bindWeekTodoEvents(ws){
+  const wk=weekKey(ws);
+  // add btn
+  const addBtn=document.getElementById('week-todo-add-btn');
+  if(addBtn) addBtn.addEventListener('click',()=>startWeekTodoAdd(wk));
+  // check, edit, delete via delegation
+  const body=document.getElementById('week-todos-body');
+  if(!body) return;
+  body.addEventListener('click',e=>{
+    const check=e.target.closest('.week-todo-check');
+    if(check){ toggleWeekTodo(check.dataset.wk, +check.dataset.idx, e); return; }
+    const del=e.target.closest('.week-todo-del');
+    if(del){ deleteWeekTodo(del.dataset.delWk, +del.dataset.delIdx); return; }
+  });
+  body.addEventListener('dblclick',e=>{
+    const span=e.target.closest('.week-todo-text');
+    if(span) startWeekTodoEdit(span.dataset.editWk, +span.dataset.editIdx);
+  });
+}
+
+function startWeekTodoAdd(wk){
+  const body=document.getElementById('week-todos-body');
+  const addBtn=document.getElementById('week-todo-add-btn');
+  const wrap=document.createElement('div'); wrap.className='week-todo-inline-add';
+  wrap.innerHTML=`<textarea class="edit-input" id="wtodo-new-inp" rows="2" placeholder="할 일 입력... (Enter로 저장)"></textarea>`;
+  body.insertBefore(wrap,addBtn);
+  const ta=document.getElementById('wtodo-new-inp'); ta.focus();
+  let submitted=false;
+  ta.addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submitted=true;confirmWeekTodoAdd(wk,ta.value.trim());wrap.remove();}
+    if(e.key==='Escape'){submitted=true;wrap.remove();}
+  });
+  ta.addEventListener('blur',()=>{ setTimeout(()=>{ if(!submitted&&ta.value.trim()) confirmWeekTodoAdd(wk,ta.value.trim()); if(!submitted) wrap.remove(); },160); });
+}
+function confirmWeekTodoAdd(wk,text){ if(!text) return; getWeekTodos(wk).push({text,done:false}); save(); renderWeek(); }
+
+function startWeekTodoEdit(wk,idx){
+  const el=document.getElementById(`wtodo-${wk}-${idx}`); if(!el) return;
+  const span=el.querySelector('.week-todo-text');
+  const cur=getWeekTodos(wk)[idx].text;
+  span.innerHTML=`<textarea class="edit-input" rows="2">${escHtml(cur)}</textarea>`;
+  const ta=span.querySelector('textarea'); ta.focus(); ta.select();
+  ta.addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();saveWeekTodoEdit(wk,idx,ta.value.trim());}
+    if(e.key==='Escape') renderWeek();
+  });
+  ta.addEventListener('blur',()=>{ setTimeout(()=>saveWeekTodoEdit(wk,idx,ta.value.trim()),160); });
+}
+function saveWeekTodoEdit(wk,idx,text){ if(!text){deleteWeekTodo(wk,idx);return;} getWeekTodos(wk)[idx].text=text; save(); renderWeek(); }
+function deleteWeekTodo(wk,idx){ getWeekTodos(wk).splice(idx,1); save(); renderWeek(); }
+function toggleWeekTodo(wk,idx,e){
+  const t=getWeekTodos(wk)[idx]; t.done=!t.done; save();
+  if(t.done) fireEffect(e.clientX,e.clientY);
+  renderWeek();
+}
+
+function planHtml(k,idx){
+  const p=getPlans(k)[idx]; if(!p) return '';
+  const c=colorFor(k,idx);
+  return `<div class="plan-item${p.done?' done':''}" id="plan-${k}-${idx}" draggable="true" data-k="${k}" data-idx="${idx}">
+    <div class="plan-color-bar" style="background:${c}"></div>
+    <div class="plan-check-wrap">
+      <div class="plan-check${p.done?' checked':''}" onclick="toggleDone('${k}',${idx},event)"></div>
+    </div>
+    <span class="plan-text" ondblclick="startEdit('${k}',${idx})" title="더블클릭하여 편집">${escHtml(p.text)}</span>
+    <button class="plan-del" onclick="deletePlan('${k}',${idx})" title="삭제">×</button>
+  </div>`;
+}
+
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function startAdd(k){
+  const col=document.getElementById('col-'+k);
+  const addBtn=col.querySelector('.add-plan-btn');
+  const wrap=document.createElement('div'); wrap.className='inline-add';
+  wrap.innerHTML=`<textarea class="edit-input" id="new-inp-${k}" rows="2" placeholder="할 일 입력..."></textarea>`;
+  col.insertBefore(wrap,addBtn);
+  const ta=document.getElementById('new-inp-'+k); ta.focus();
+  let submitted=false;
+  ta.addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submitted=true;confirmAdd(k,ta.value.trim());wrap.remove();}
+    if(e.key==='Escape'){submitted=true;wrap.remove();}
+  });
+  ta.addEventListener('blur',()=>{ setTimeout(()=>{ if(!submitted&&ta.value.trim()) confirmAdd(k,ta.value.trim()); if(!submitted) wrap.remove(); },160); });
+}
+function confirmAdd(k,text){ if(!text) return; getPlans(k).push({text,done:false}); save(); renderWeek(); }
+function startEdit(k,idx){
+  const el=document.getElementById(`plan-${k}-${idx}`); if(!el) return;
+  const span=el.querySelector('.plan-text');
+  const cur=getPlans(k)[idx].text;
+  span.innerHTML=`<textarea class="edit-input" rows="2">${escHtml(cur)}</textarea>`;
+  const ta=span.querySelector('textarea'); ta.focus(); ta.select();
+  ta.addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();saveEdit(k,idx,ta.value.trim());}
+    if(e.key==='Escape') renderWeek();
+  });
+  ta.addEventListener('blur',()=>{ setTimeout(()=>saveEdit(k,idx,ta.value.trim()),160); });
+}
+function saveEdit(k,idx,text){ if(!text){deletePlan(k,idx);return;} getPlans(k)[idx].text=text; save(); renderWeek(); }
+function deletePlan(k,idx){ getPlans(k).splice(idx,1); save(); renderWeek(); }
+function toggleDone(k,idx,e){
+  const p=getPlans(k)[idx]; p.done=!p.done; save();
+  if(p.done) fireEffect(e.clientX,e.clientY);
+  renderWeek();
+}
+
+/* Settings actions */
+function setWeekStart(v){ settings.weekStart=v; saveSettings(); applySettings(); render(); }
+function setTheme(v){ settings.theme=v; saveSettings(); applySettings(); }
+function selectEffect(v,e){
+  e.stopPropagation();
+  settings.effect=v; saveSettings(); applySettings();
+  if(v==='none') return;
+  // 클릭된 라디오 버튼 위치 찾기
+  const row=document.querySelector(`.effect-row[data-effect="${v}"]`);
+  if(!row) return;
+  const radio=row.querySelector('.effect-radio');
+  const rect=radio.getBoundingClientRect();
+  const x=rect.left+rect.width/2, y=rect.top+rect.height/2;
+  fireEffect(x,y,v);
+}
+
+/* Effect engine */
+function fireEffect(x,y,override){
+  const name=override||settings.effect;
+  if(name==='confetti') fxConfetti(x,y);
+  else if(name==='stars') fxStars(x,y);
+  else if(name==='bubbles') fxBubbles(x,y);
+  else if(name==='flash') fxFlash(x,y);
+}
+
+function fxConfetti(x,y){
+  const iv=settings.intensity;
+  const count=Math.round(5+iv*iv*1.5);   // 6 → 155 at max
+  const dist=20+iv*12;
+  const sz=4+iv*0.8;
+  const dur=500+iv*80;
+  const ring=document.createElement('div'); ring.className='fx-ripple';
+  ring.style.cssText=`left:${x}px;top:${y}px;width:${10+iv*3}px;height:${10+iv*3}px;border:2px solid var(--accent)`;
+  document.body.appendChild(ring); setTimeout(()=>ring.remove(),550+iv*50);
+  const cols=['#2C4A3E','#C49A3C','#8B5E3C','#4A3B6B','#7EB89A','#E8C97D','#D4A57A','#88BBAA','#E8A0A0'];
+  for(let i=0;i<count;i++){
+    const el=document.createElement('div');
+    const isRect=Math.random()>.45; el.className=isRect?'fx-confetti':'fx-particle';
+    const w=sz*(0.7+Math.random()*.6); const h=isRect?w*2:w;
+    el.style.width=w+'px'; el.style.height=h+'px';
+    const angle=(i/count)*Math.PI*2+Math.random()*.5;
+    const d=dist*(0.4+Math.random()*.8);
+    const rot=(Math.random()-.5)*540;
+    el.style.cssText+=`left:${x}px;top:${y}px;background:${cols[i%cols.length]};--tx:${Math.cos(angle)*d}px;--ty:${Math.sin(angle)*d}px;--rot:${rot}deg;animation-delay:${Math.random()*.04}s;animation-duration:${dur}ms`;
+    document.body.appendChild(el); setTimeout(()=>el.remove(),dur+100);
+  }
+}
+function fxStars(x,y){
+  const iv=settings.intensity;
+  const count=Math.round(3+iv*iv*0.8);
+  const dist=20+iv*14;
+  const sz=10+iv*2;
+  const chars=['⭐','✨','💫','🌟','⚡','💥'];
+  for(let i=0;i<count;i++){
+    const el=document.createElement('div'); el.className='fx-star';
+    el.textContent=chars[i%chars.length];
+    const angle=(i/count)*Math.PI*2+Math.random()*.4;
+    const d=dist*(0.5+Math.random()*.7);
+    const rot=(Math.random()-.5)*360;
+    el.style.cssText=`left:${x}px;top:${y}px;font-size:${sz}px;--tx:${Math.cos(angle)*d}px;--ty:${Math.sin(angle)*d}px;--rot:${rot}deg`;
+    document.body.appendChild(el); setTimeout(()=>el.remove(),900);
+  }
+}
+function fxBubbles(x,y){
+  const iv=settings.intensity;
+  const count=Math.round(4+iv*iv*0.9);
+  const dist=12+iv*13;
+  const cols=['var(--accent)','var(--sat)','var(--sun)','#C49A3C'];
+  for(let i=0;i<count;i++){
+    const el=document.createElement('div'); el.className='fx-bubble';
+    const sz=(6+iv*1.5)*(0.5+Math.random());
+    const angle=(i/count)*Math.PI*2+Math.random()*.4;
+    const d=dist*(0.4+Math.random()*.8);
+    const col=cols[i%cols.length];
+    el.style.cssText=`left:${x}px;top:${y}px;width:${sz}px;height:${sz}px;border:${1+iv*.2}px solid ${col};--tx:${Math.cos(angle)*d}px;--ty:${Math.sin(angle)*d}px`;
+    document.body.appendChild(el); setTimeout(()=>el.remove(),900);
+  }
+}
+function fxFlash(x,y){
+  const iv=settings.intensity;
+  const sz=40+iv*20;
+  const el=document.createElement('div'); el.className='fx-flash';
+  el.style.cssText=`left:${x}px;top:${y}px;width:${sz}px;height:${sz}px;background:radial-gradient(circle,rgba(255,255,200,1) 0%,rgba(255,240,160,.6) 40%,transparent 70%)`;
+  document.body.appendChild(el); setTimeout(()=>el.remove(),550+iv*30);
+  const pCount=Math.round(4+iv*iv*0.6);
+  for(let i=0;i<pCount;i++){
+    const p=document.createElement('div'); p.className='fx-particle';
+    const psz=3+iv*.6;
+    p.style.width=psz+'px'; p.style.height=psz+'px';
+    const angle=(i/pCount)*Math.PI*2;
+    const d=18+iv*5;
+    p.style.cssText+=`left:${x}px;top:${y}px;background:rgba(255,240,150,0.95);--tx:${Math.cos(angle)*d}px;--ty:${Math.sin(angle)*d}px`;
+    document.body.appendChild(p); setTimeout(()=>p.remove(),680+iv*30);
+  }
+}
+
+/* ── Drag & drop for plan items ── */
+let dragSrc=null; // {k, idx}
+
+function bindPlanDragEvents(){
+  const cols=document.querySelectorAll('.week-col');
+  cols.forEach(col=>{
+    col.addEventListener('dragover',onColDragOver);
+    col.addEventListener('dragleave',onColDragLeave);
+    col.addEventListener('drop',onColDrop);
+  });
+  const items=document.querySelectorAll('.plan-item');
+  items.forEach(it=>{
+    it.addEventListener('dragstart',onPlanDragStart);
+    it.addEventListener('dragend',onPlanDragEnd);
+  });
+}
+
+function onPlanDragStart(e){
+  // 편집 textarea가 열려있을 땐 드래그 무시
+  if(e.target.tagName==='TEXTAREA'){ e.preventDefault(); return; }
+  const it=e.currentTarget;
+  dragSrc={ k:it.dataset.k, idx:parseInt(it.dataset.idx,10) };
+  it.classList.add('dragging');
+  try{ e.dataTransfer.setData('text/plain', it.dataset.k+':'+it.dataset.idx); }catch(_){}
+  e.dataTransfer.effectAllowed='move';
+}
+
+function onPlanDragEnd(e){
+  e.currentTarget.classList.remove('dragging');
+  clearDropIndicators();
+  document.querySelectorAll('.week-col.drag-over').forEach(c=>c.classList.remove('drag-over'));
+  dragSrc=null;
+}
+
+function clearDropIndicators(){
+  document.querySelectorAll('.plan-drop-indicator').forEach(el=>el.remove());
+}
+
+function onColDragOver(e){
+  if(!dragSrc) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect='move';
+  const col=e.currentTarget;
+  col.classList.add('drag-over');
+  // 드롭 위치(어느 아이템 앞/뒤) 계산해서 인디케이터 표시
+  clearDropIndicators();
+  const items=[...col.querySelectorAll('.plan-item:not(.dragging)')];
+  const addBtn=col.querySelector('.add-plan-btn');
+  const indicator=document.createElement('div');
+  indicator.className='plan-drop-indicator';
+
+  if(items.length===0){
+    col.insertBefore(indicator, addBtn);
+    return;
+  }
+  // 마우스 Y 위치 기준으로 가장 가까운 삽입 위치 찾기
+  const y=e.clientY;
+  let placed=false;
+  for(const item of items){
+    const rect=item.getBoundingClientRect();
+    const mid=rect.top+rect.height/2;
+    if(y < mid){
+      col.insertBefore(indicator, item);
+      placed=true;
+      break;
+    }
+  }
+  if(!placed){
+    col.insertBefore(indicator, addBtn);
+  }
+}
+
+function onColDragLeave(e){
+  const col=e.currentTarget;
+  if(!col.contains(e.relatedTarget)){
+    col.classList.remove('drag-over');
+    col.querySelectorAll('.plan-drop-indicator').forEach(el=>el.remove());
+  }
+}
+
+function onColDrop(e){
+  if(!dragSrc) return;
+  e.preventDefault();
+  const col=e.currentTarget;
+  const destK=col.id.replace(/^col-/,'');
+  const indicator=col.querySelector('.plan-drop-indicator');
+  const childList=[...col.children];
+  let destIdx;
+  if(indicator){
+    // 인디케이터 앞에 있는 plan-item 수가 destIdx
+    destIdx = childList.slice(0, childList.indexOf(indicator)).filter(c=>c.classList.contains('plan-item')).length;
+  } else {
+    destIdx = col.querySelectorAll('.plan-item').length;
+  }
+  movePlan(dragSrc.k, dragSrc.idx, destK, destIdx);
+}
+
+function movePlan(srcK, srcIdx, destK, destIdx){
+  const srcArr=getPlans(srcK);
+  if(srcIdx<0||srcIdx>=srcArr.length) return;
+  const [item]=srcArr.splice(srcIdx,1);
+  const destArr=getPlans(destK);
+  // 같은 컬럼 내에서 뒤쪽으로 이동할 때 인덱스 보정
+  if(srcK===destK && destIdx>srcIdx) destIdx--;
+  if(destIdx<0) destIdx=0;
+  if(destIdx>destArr.length) destIdx=destArr.length;
+  destArr.splice(destIdx,0,item);
+  save();
+  renderWeek();
+}
+
+/* ── Statistics ── */
+function isDayKey(k){ return /^\d{4}-\d{2}-\d{2}$/.test(k); }
+
+// 주어진 키 배열의 플랜들에서 (done, total) 카운트
+function countPlansForKeys(keys){
+  let total=0, done=0;
+  for(const k of keys){
+    const arr=plans[k];
+    if(!Array.isArray(arr)) continue;
+    for(const p of arr){
+      if(p&&typeof p==='object'&&'text' in p){
+        total++;
+        if(p.done) done++;
+      }
+    }
+  }
+  return {total, done};
+}
+
+// 모든 일간 플랜 (week- 제외)
+function statsAllDayPlans(){
+  const keys=Object.keys(plans).filter(isDayKey);
+  return countPlansForKeys(keys);
+}
+
+// 특정 주의 일간 플랜 (월~일 또는 일~토, 설정 따름)
+function statsThisWeekPlans(){
+  const ws=getWeekStart(new Date());
+  const keys=[];
+  for(let i=0;i<7;i++){
+    const d=new Date(ws); d.setDate(ws.getDate()+i);
+    keys.push(key(d.getFullYear(),d.getMonth(),d.getDate()));
+  }
+  return countPlansForKeys(keys);
+}
+
+// 특정 달의 일간 플랜
+function statsThisMonthPlans(){
+  const t=new Date();
+  const y=t.getFullYear(), m=t.getMonth();
+  const lastDay=new Date(y,m+1,0).getDate();
+  const keys=[];
+  for(let d=1; d<=lastDay; d++){
+    keys.push(key(y,m,d));
+  }
+  return countPlansForKeys(keys);
+}
+
+// 이번 주의 weekly todos
+function statsThisWeekTodos(){
+  const ws=getWeekStart(new Date());
+  const wk=weekKey(ws);
+  const arr=plans[wk];
+  let total=0, done=0;
+  if(Array.isArray(arr)){
+    for(const t of arr){
+      if(t&&typeof t==='object'&&'text' in t){ total++; if(t.done) done++; }
+    }
+  }
+  return {total, done};
+}
+
+function statCardHtml(label, period, stats){
+  const pct = stats.total ? Math.round(stats.done/stats.total*100) : 0;
+  const emptyMsg = stats.total===0
+    ? `<div class="stat-empty">아직 등록된 항목이 없어요</div>`
+    : `<div class="stat-count"><span class="stat-count-done">${stats.done}</span> / ${stats.total} 완료</div>
+       <div class="stat-bar"><div class="stat-bar-fill" style="width:${pct}%"></div></div>`;
+  return `<div class="stat-card">
+    <div class="stat-card-header">
+      <span class="stat-card-label">${label}</span>
+      <span class="stat-card-period">${period}</span>
+    </div>
+    <div class="stat-percent">${pct}<span class="stat-percent-suffix">%</span></div>
+    ${emptyMsg}
+  </div>`;
+}
+
+function renderStats(){
+  document.getElementById('period-label').textContent='';
+  const t=new Date();
+  const ws=getWeekStart(new Date());
+  const we=new Date(ws); we.setDate(we.getDate()+6);
+  const fmt=d=>`${d.getMonth()+1}/${d.getDate()}`;
+  const weekPeriod = `${fmt(ws)} – ${fmt(we)}`;
+  const monthPeriod = `${t.getFullYear()}년 ${MONTHS[t.getMonth()]}`;
+
+  const week=statsThisWeekPlans();
+  const month=statsThisMonthPlans();
+  const all=statsAllDayPlans();
+  const wtodos=statsThisWeekTodos();
+
+  document.getElementById('view-container').innerHTML=`
+    <div class="stats-section-title">일간 플랜 완료율</div>
+    <div class="stats-grid">
+      ${statCardHtml('이번 주', weekPeriod, week)}
+      ${statCardHtml('이번 달', monthPeriod, month)}
+      ${statCardHtml('전체 누적', '모든 기록', all)}
+    </div>
+    <div class="stats-section-title">이번 주 할 일</div>
+    <div class="stats-grid">
+      ${statCardHtml('주간 To-Do', weekPeriod, wtodos)}
+    </div>
+    <div class="stats-section-title">그래프</div>
+    ${renderTrendChartHtml()}
+    ${renderDowChartHtml()}
+  `;
+}
+
+/* ── Backup / restore ── */
+function exportData(){
+  const payload={
+    version:1,
+    exportedAt:new Date().toISOString(),
+    plans:plans,
+    settings:settings
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const d=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  const fname=`planner-backup-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`;
+  a.href=url; a.download=fname;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+function importData(event, mode){
+  const file=event.target.files&&event.target.files[0];
+  if(!file){ return; }
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data||typeof data!=='object'||!data.plans||typeof data.plans!=='object'){
+        alert('올바른 백업 파일 형식이 아닙니다.');
+        return;
+      }
+      if(mode==='overwrite'){
+        if(!confirm('현재 모든 플랜과 설정이 백업 파일 내용으로 교체됩니다.\n계속하시겠어요?')){ event.target.value=''; return; }
+        plans=data.plans;
+        if(data.settings&&typeof data.settings==='object'){
+          settings=Object.assign(settings, data.settings);
+        }
+      } else {
+        // merge: 같은 키의 항목들을 합치되 중복 제거 (text 기준)
+        for(const k of Object.keys(data.plans)){
+          const incoming=data.plans[k];
+          if(!Array.isArray(incoming)) continue;
+          if(!Array.isArray(plans[k])) plans[k]=[];
+          const existingTexts=new Set(plans[k].map(p=>p&&p.text));
+          for(const item of incoming){
+            if(!item||typeof item!=='object'||!('text' in item)) continue;
+            if(!existingTexts.has(item.text)){
+              plans[k].push({text:item.text, done:!!item.done});
+              existingTexts.add(item.text);
+            }
+          }
+        }
+      }
+      save(); saveSettings(); applySettings();
+      alert(mode==='overwrite'?'덮어쓰기 복원이 완료되었습니다.':'병합 복원이 완료되었습니다.');
+      // 현재 탭에 맞게 다시 렌더
+      if(currentView==='settings'){
+        // 설정 화면 유지
+      } else {
+        render();
+      }
+    }catch(err){
+      alert('파일을 읽을 수 없습니다: '+err.message);
+    }
+    event.target.value=''; // 같은 파일 다시 선택 가능하도록 초기화
+  };
+  reader.readAsText(file);
+}
+
+/* ──────────────── Live Clock ──────────────── */
+const DOW_KO = ['일', '월', '화', '수', '목', '금', '토'];
+function tickClock() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const dateEl = document.getElementById('clock-date');
+  const timeEl = document.getElementById('clock-time');
+  const secEl = document.getElementById('clock-sec');
+  if (dateEl) {
+    dateEl.textContent = `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} (${DOW_KO[d.getDay()]})`;
+  }
+  if (timeEl && secEl) {
+    timeEl.firstChild.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    secEl.textContent = `:${pad(d.getSeconds())}`;
+  }
+}
+tickClock();
+setInterval(tickClock, 1000);
+
+/* ──────────────── Stats Charts ──────────────── */
+// 최근 14일 일간 플랜 추이를 위한 데이터 수집
+function getRecentDaysStats(numDays) {
+  const out = [];
+  const t = new Date();
+  for (let i = numDays - 1; i >= 0; i--) {
+    const d = new Date(t.getFullYear(), t.getMonth(), t.getDate() - i);
+    const k = key(d.getFullYear(), d.getMonth(), d.getDate());
+    const arr = plans[k];
+    let total = 0, done = 0;
+    if (Array.isArray(arr)) {
+      for (const p of arr) {
+        if (p && typeof p === 'object' && 'text' in p) {
+          total++;
+          if (p.done) done++;
+        }
+      }
+    }
+    out.push({
+      date: d,
+      label: `${d.getMonth()+1}/${d.getDate()}`,
+      dow: DOW_KO[d.getDay()],
+      total, done,
+      isToday: i === 0
+    });
+  }
+  return out;
+}
+
+// SVG 막대 차트 — 각 날의 완료율(%)을 막대 높이로 표시
+function renderTrendChartHtml() {
+  const data = getRecentDaysStats(14);
+  // 차트 dims
+  const W = 700, H = 230;
+  const padL = 40, padR = 14, padT = 18, padB = 42;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const n = data.length;
+  const gap = 6;
+  const barW = (innerW - gap * (n - 1)) / n;
+
+  // 그리드 라인 — 0%, 25%, 50%, 75%, 100% 고정
+  let gridLines = '';
+  let axisLabels = '';
+  const ticks = [0, 25, 50, 75, 100];
+  for (const t of ticks) {
+    const y = padT + innerH * (1 - t / 100);
+    gridLines += `<line class="chart-grid-line" x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}"></line>`;
+    axisLabels += `<text class="chart-axis-label" x="${padL-6}" y="${y+3}">${t}%</text>`;
+  }
+
+  // 막대들
+  let bars = '';
+  let daysWithPlans = 0;
+  let pctSum = 0;
+
+  data.forEach((d, i) => {
+    const x = padL + i * (barW + gap);
+    const cx = x + barW / 2;
+    const hasData = d.total > 0;
+    const pct = hasData ? (d.done / d.total) * 100 : 0;
+    if (hasData) {
+      daysWithPlans++;
+      pctSum += pct;
+    }
+
+    if (hasData) {
+      // 회색 배경 막대 (항상 100%까지)
+      const bgH = innerH;
+      const bgY = padT;
+      // 완료율 막대
+      const doneH = (pct / 100) * innerH;
+      const doneY = padT + innerH - doneH;
+
+      bars += `<g class="chart-bar-group">
+        <rect class="chart-bar-total" x="${x}" y="${bgY}" width="${barW}" height="${bgH}" rx="3"></rect>
+        ${doneH > 0 ? `<rect class="chart-bar-done" x="${x}" y="${doneY}" width="${barW}" height="${doneH}" rx="3"></rect>` : ''}
+        <title>${d.label} (${d.dow}) — ${Math.round(pct)}% · ${d.done}/${d.total} 완료</title>
+      </g>`;
+      // 막대 위 % 라벨 — 막대가 너무 높으면 막대 안쪽에 흰색으로
+      const pctRounded = Math.round(pct);
+      const tooHigh = doneY - 4 < padT + 12;
+      const labelY = tooHigh ? doneY + 13 : doneY - 4;
+      const labelStyle = tooHigh ? 'fill:#fff' : '';
+      bars += `<text class="chart-bar-value" x="${cx}" y="${labelY}" style="${labelStyle}">${pctRounded}%</text>`;
+    } else {
+      // 플랜 없는 날: 바닥에 점선만 (데이터 없음 표시)
+      const baseY = padT + innerH;
+      bars += `<g class="chart-bar-group" opacity="0.5">
+        <line x1="${x+2}" y1="${baseY}" x2="${x+barW-2}" y2="${baseY}"
+              stroke="var(--text-faint)" stroke-width="1.2" stroke-dasharray="2 2"></line>
+        <title>${d.label} (${d.dow}) — 등록된 플랜 없음</title>
+      </g>`;
+    }
+    // 날짜 레이블
+    const labelColor = d.isToday ? 'var(--sun)' : 'var(--text-faint)';
+    const labelWeight = d.isToday ? '500' : '400';
+    bars += `<text class="chart-bar-label" x="${cx}" y="${H - padB + 14}" style="fill:${labelColor};font-weight:${labelWeight}">${d.label}</text>`;
+    bars += `<text class="chart-bar-label" x="${cx}" y="${H - padB + 26}" style="fill:${labelColor}">${d.dow}</text>`;
+    if (d.isToday) {
+      bars += `<circle class="chart-today-dot" cx="${cx}" cy="${H - padB + 34}" r="2"></circle>`;
+    }
+  });
+
+  if (daysWithPlans === 0) {
+    return `<div class="stat-chart-card">
+      <div class="stat-chart-header">
+        <div class="stat-chart-title">최근 14일 완료율</div>
+      </div>
+      <div class="chart-empty">최근 14일 동안 등록된 플랜이 없어요</div>
+    </div>`;
+  }
+
+  const avgPct = Math.round(pctSum / daysWithPlans);
+  return `<div class="stat-chart-card">
+    <div class="stat-chart-header">
+      <div class="stat-chart-title">최근 14일 완료율</div>
+      <div class="stat-chart-legend">
+        <span>일평균 <span style="color:var(--accent);font-weight:500">${avgPct}%</span> · 활동 ${daysWithPlans}일</span>
+      </div>
+    </div>
+    <svg class="stat-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+      ${gridLines}
+      ${axisLabels}
+      ${bars}
+    </svg>
+  </div>`;
+}
+
+// 요일별 완료율 차트
+function renderDowChartHtml() {
+  // weekStart 따라 요일 순서 정렬
+  const DOWS = getDOWS(); // ['월','화'...] 또는 ['일','월'...]
+  const ws = settings.weekStart;
+  // 각 요일의 (done, total) 계산 - 전체 누적
+  const stats = Array(7).fill(0).map(() => ({ done: 0, total: 0 }));
+  for (const k of Object.keys(plans)) {
+    if (!isDayKey(k)) continue;
+    const arr = plans[k];
+    if (!Array.isArray(arr) || arr.length === 0) continue;
+    const [y, m, d] = k.split('-').map(Number);
+    const dow = new Date(y, m-1, d).getDay(); // 0=일
+    // weekStart에 맞춰 인덱스 변환
+    const idx = ws === 'mon' ? (dow === 0 ? 6 : dow - 1) : dow;
+    for (const p of arr) {
+      if (p && typeof p === 'object' && 'text' in p) {
+        stats[idx].total++;
+        if (p.done) stats[idx].done++;
+      }
+    }
+  }
+  const hasData = stats.some(s => s.total > 0);
+  if (!hasData) {
+    return `<div class="stat-chart-card">
+      <div class="stat-chart-header">
+        <div class="stat-chart-title">요일별 완료율</div>
+      </div>
+      <div class="chart-empty">집계할 데이터가 충분하지 않아요</div>
+    </div>`;
+  }
+  let rows = '';
+  stats.forEach((s, i) => {
+    const hasData = s.total > 0;
+    const pct = hasData ? Math.round(s.done / s.total * 100) : 0;
+    const dowColorStr = i === satIdx() ? 'var(--sat)' : (i === sunIdx() ? 'var(--sun)' : 'var(--text-muted)');
+    const titleText = hasData
+      ? `${DOWS[i]}요일: ${s.done}/${s.total} 완료 (${pct}%)`
+      : `${DOWS[i]}요일: 등록된 플랜 없음`;
+    rows += `<div class="dow-chart-row${hasData ? '' : ' no-data'}" title="${titleText}">
+      <span class="dow-chart-label" style="color:${dowColorStr}">${DOWS[i]}</span>
+      <div class="dow-chart-bar-bg">
+        ${hasData && pct > 0 ? `<div class="dow-chart-bar-fill" style="width:${pct}%"></div>` : ''}
+      </div>
+      <span class="dow-chart-bar-pct${hasData ? '' : ' empty'}">${hasData ? pct + '%' : '—'}</span>
+      <span class="dow-chart-count">${hasData ? s.done + '/' + s.total : '—'}</span>
+    </div>`;
+  });
+  return `<div class="stat-chart-card">
+    <div class="stat-chart-header">
+      <div class="stat-chart-title">요일별 완료율</div>
+      <div class="stat-chart-legend">
+        <span>전체 누적 기준</span>
+      </div>
+    </div>
+    ${rows}
+  </div>`;
+}
+
+/* ──────────────── Pomodoro Timer ──────────────── */
+const POMO_DEFAULTS = { work: 25*60, break: 5*60, long: 15*60 };
+const POMO_LABELS = { work: '집중', break: '휴식', long: '긴 휴식' };
+const POMO_STORE_KEY = 'planner-pomodoro';
+
+let pomoState = {
+  mode: 'work',          // 'work' | 'break' | 'long'
+  endTime: null,         // running 중일 때 종료 시각 (Date.now() ms)
+  remaining: POMO_DEFAULTS.work, // 일시정지/대기 중일 때 남은 초
+  running: false,
+  // 오늘 완료된 work 세션 수 (날짜 바뀌면 리셋)
+  todayCount: 0,
+  todayDate: '',
+  // 현재 사이클에서 완료한 work 세션 (0~4, 4 채우면 long-break 유도)
+  cycleCount: 0,
+  // 사용자가 설정한 모드별 시간 (초 단위)
+  durations: { work: POMO_DEFAULTS.work, break: POMO_DEFAULTS.break, long: POMO_DEFAULTS.long }
+};
+
+function pomoLoad() {
+  try {
+    const s = JSON.parse(localStorage.getItem(POMO_STORE_KEY) || '{}');
+    if (s && typeof s === 'object') Object.assign(pomoState, s);
+  } catch(e) {}
+  // durations 보장 (예전 버전 데이터에 없을 수 있음)
+  if (!pomoState.durations || typeof pomoState.durations !== 'object') {
+    pomoState.durations = { ...POMO_DEFAULTS };
+  }
+  for (const m of ['work','break','long']) {
+    const v = pomoState.durations[m];
+    if (typeof v !== 'number' || !isFinite(v) || v < 60 || v > 180*60) {
+      pomoState.durations[m] = POMO_DEFAULTS[m];
+    }
+  }
+  // 날짜 바뀌었으면 todayCount 리셋
+  const td = todayDateStr();
+  if (pomoState.todayDate !== td) {
+    pomoState.todayDate = td;
+    pomoState.todayCount = 0;
+  }
+  // running 중인데 endTime이 이미 지났으면 자동 완료 처리
+  if (pomoState.running && pomoState.endTime && Date.now() >= pomoState.endTime) {
+    pomoCompleteSession(true); // silent: 알림 없이 처리
+  }
+}
+function pomoSave() {
+  try { localStorage.setItem(POMO_STORE_KEY, JSON.stringify(pomoState)); } catch(e) {}
+}
+function todayDateStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+}
+
+function pomoModeDuration(mode) {
+  if (pomoState.durations && typeof pomoState.durations[mode] === 'number') {
+    return pomoState.durations[mode];
+  }
+  return POMO_DEFAULTS[mode] || POMO_DEFAULTS.work;
+}
+
+function pomoCurrentRemaining() {
+  if (pomoState.running && pomoState.endTime) {
+    return Math.max(0, Math.round((pomoState.endTime - Date.now()) / 1000));
+  }
+  return pomoState.remaining;
+}
+
+function pomoFormatTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function pomoRender() {
+  const fab = document.getElementById('pomo-fab');
+  if (!fab) return;
+  const sec = pomoCurrentRemaining();
+  const total = pomoModeDuration(pomoState.mode);
+  const fmt = pomoFormatTime(sec);
+
+  // 미니 표시
+  const miniTime = document.getElementById('pomo-mini-time');
+  const miniLabel = document.getElementById('pomo-mini-label');
+  if (miniTime) miniTime.textContent = fmt;
+  if (miniLabel) {
+    miniLabel.textContent = pomoState.running
+      ? POMO_LABELS[pomoState.mode]
+      : (sec === total ? 'Pomodoro' : '일시정지');
+  }
+
+  // 확장 표시
+  const timeEl = document.getElementById('pomo-time');
+  const modeLabelEl = document.getElementById('pomo-mode-label');
+  if (timeEl) timeEl.textContent = fmt;
+  if (modeLabelEl) modeLabelEl.textContent = POMO_LABELS[pomoState.mode];
+
+  // 진행 링 (stroke-dashoffset)
+  const ring = document.getElementById('pomo-ring-fg');
+  if (ring) {
+    const C = 2 * Math.PI * 46; // ≈ 289.03
+    const progress = total > 0 ? (1 - sec / total) : 0;
+    ring.setAttribute('stroke-dashoffset', String(C * progress));
+  }
+
+  // 모드 탭 (현재 설정된 분 수 반영)
+  const workMin = Math.round(pomoModeDuration('work') / 60);
+  const breakMin = Math.round(pomoModeDuration('break') / 60);
+  const longMin = Math.round(pomoModeDuration('long') / 60);
+  const tabWork = document.getElementById('pomo-tab-work');
+  const tabBreak = document.getElementById('pomo-tab-break');
+  const tabLong = document.getElementById('pomo-tab-long');
+  if (tabWork) tabWork.textContent = `집중 ${workMin}분`;
+  if (tabBreak) tabBreak.textContent = `휴식 ${breakMin}분`;
+  if (tabLong) tabLong.textContent = `긴휴식 ${longMin}분`;
+  tabWork.classList.toggle('active', pomoState.mode==='work');
+  tabBreak.classList.toggle('active', pomoState.mode==='break');
+  tabLong.classList.toggle('active', pomoState.mode==='long');
+
+  // 설정 입력 동기화 (사용자가 편집 중이 아닐 때만)
+  ['work','break','long'].forEach(m => {
+    const inp = document.getElementById('pomo-input-'+m);
+    if (inp && document.activeElement !== inp) {
+      inp.value = Math.round(pomoModeDuration(m) / 60);
+    }
+  });
+
+  // 시작/일시정지 버튼
+  const startBtn = document.getElementById('pomo-start-btn');
+  if (startBtn) startBtn.textContent = pomoState.running ? '일시정지' : (sec < total ? '재개' : '시작');
+
+  // 오늘 카운트
+  const todayCountEl = document.getElementById('pomo-today-count');
+  if (todayCountEl) todayCountEl.textContent = String(pomoState.todayCount);
+
+  // 사이클 점
+  const dots = document.querySelectorAll('#pomo-session-dots .pomo-session-dot');
+  dots.forEach((d, i) => d.classList.toggle('filled', i < pomoState.cycleCount));
+
+  // data-mode 속성 (링 컬러 변경용)
+  fab.dataset.mode = pomoState.mode;
+  fab.classList.toggle('running', pomoState.running);
+}
+
+function pomoSetMode(mode) {
+  pomoState.mode = mode;
+  pomoState.running = false;
+  pomoState.endTime = null;
+  pomoState.remaining = pomoModeDuration(mode);
+  pomoSave();
+  pomoRender();
+}
+
+function pomoToggle() {
+  if (pomoState.running) {
+    // 일시정지
+    pomoState.remaining = pomoCurrentRemaining();
+    pomoState.running = false;
+    pomoState.endTime = null;
+  } else {
+    // 시작 / 재개
+    if (pomoState.remaining <= 0) pomoState.remaining = pomoModeDuration(pomoState.mode);
+    pomoState.endTime = Date.now() + pomoState.remaining * 1000;
+    pomoState.running = true;
+  }
+  pomoSave();
+  pomoRender();
+}
+
+function pomoReset() {
+  pomoState.running = false;
+  pomoState.endTime = null;
+  pomoState.remaining = pomoModeDuration(pomoState.mode);
+  pomoSave();
+  pomoRender();
+}
+
+function pomoCompleteSession(silent) {
+  // 현재 모드 세션이 끝난 시점
+  const finishedMode = pomoState.mode;
+  if (finishedMode === 'work') {
+    pomoState.todayCount++;
+    pomoState.cycleCount = Math.min(4, pomoState.cycleCount + 1);
+  }
+  pomoState.running = false;
+  pomoState.endTime = null;
+
+  // 다음 모드 자동 추천
+  let nextMode;
+  if (finishedMode === 'work') {
+    nextMode = (pomoState.cycleCount >= 4) ? 'long' : 'break';
+    if (pomoState.cycleCount >= 4) pomoState.cycleCount = 0;
+  } else {
+    nextMode = 'work';
+  }
+  pomoState.mode = nextMode;
+  pomoState.remaining = pomoModeDuration(nextMode);
+  pomoSave();
+  pomoRender();
+
+  if (!silent) {
+    pomoPlayChime();
+    pomoFlashTitle(finishedMode);
+  }
+}
+
+function pomoPlayChime() {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    const ctx = new AC();
+    const now = ctx.currentTime;
+    [880, 1175, 1568].forEach((freq, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0, now + i * 0.18);
+      g.gain.linearRampToValueAtTime(0.18, now + i * 0.18 + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.18 + 0.5);
+      o.connect(g).connect(ctx.destination);
+      o.start(now + i * 0.18);
+      o.stop(now + i * 0.18 + 0.55);
+    });
+    setTimeout(() => ctx.close(), 1500);
+  } catch(e) {}
+}
+
+let pomoTitleTimer = null;
+const originalTitle = document.title;
+function pomoFlashTitle(finishedMode) {
+  if (pomoTitleTimer) clearInterval(pomoTitleTimer);
+  const msg = finishedMode === 'work' ? '🍅 집중 완료!' : '✨ 휴식 끝!';
+  let toggle = true;
+  pomoTitleTimer = setInterval(() => {
+    document.title = toggle ? msg : originalTitle;
+    toggle = !toggle;
+  }, 800);
+  // 사용자가 페이지에 다시 들어오면(visible) 원래대로
+  const restore = () => {
+    if (pomoTitleTimer) { clearInterval(pomoTitleTimer); pomoTitleTimer = null; }
+    document.title = originalTitle;
+    document.removeEventListener('visibilitychange', onVis);
+    window.removeEventListener('focus', restore);
+  };
+  const onVis = () => { if (!document.hidden) restore(); };
+  document.addEventListener('visibilitychange', onVis);
+  window.addEventListener('focus', restore);
+  // 30초 후 자동 복귀
+  setTimeout(restore, 30000);
+}
+
+function pomoExpand() {
+  document.getElementById('pomo-fab').classList.remove('minimized');
+  document.getElementById('pomo-fab').classList.add('expanded');
+  document.getElementById('pomo-mini').style.display = 'none';
+  document.getElementById('pomo-expanded').style.display = 'block';
+  pomoRender();
+}
+function pomoMinimize() {
+  document.getElementById('pomo-fab').classList.add('minimized');
+  document.getElementById('pomo-fab').classList.remove('expanded');
+  document.getElementById('pomo-mini').style.display = 'flex';
+  document.getElementById('pomo-expanded').style.display = 'none';
+  // 접을 때 설정 화면도 닫기
+  pomoCloseSettings();
+  pomoRender();
+}
+
+/* ── Pomodoro settings (사용자 시간 조절) ── */
+function pomoToggleSettings() {
+  const mainView = document.getElementById('pomo-main-view');
+  const setView = document.getElementById('pomo-settings-view');
+  const btn = document.getElementById('pomo-settings-btn');
+  if (!mainView || !setView) return;
+  const showing = setView.style.display !== 'none';
+  if (showing) {
+    setView.style.display = 'none';
+    mainView.style.display = '';
+    btn.classList.remove('active');
+  } else {
+    mainView.style.display = 'none';
+    setView.style.display = '';
+    btn.classList.add('active');
+    pomoRender(); // 입력 동기화
+    pomoUpdateSettingsNote();
+  }
+}
+function pomoCloseSettings() {
+  const mainView = document.getElementById('pomo-main-view');
+  const setView = document.getElementById('pomo-settings-view');
+  const btn = document.getElementById('pomo-settings-btn');
+  if (mainView) mainView.style.display = '';
+  if (setView) setView.style.display = 'none';
+  if (btn) btn.classList.remove('active');
+}
+
+function pomoUpdateSettingsNote() {
+  const note = document.getElementById('pomo-settings-note');
+  if (!note) return;
+  if (pomoState.running) {
+    note.textContent = '⏱ 실행 중인 세션은 그대로 두고, 다음 세션부터 새 시간이 적용됩니다.';
+  } else {
+    note.textContent = '변경하면 현재 모드의 남은 시간이 새 값으로 재설정됩니다.';
+  }
+}
+
+// 분 단위 값을 받아 해당 모드의 duration 변경
+function pomoApplyDuration(mode, minutes) {
+  let m = Math.round(Number(minutes));
+  if (!isFinite(m)) return;
+  if (m < 1) m = 1;
+  if (m > 180) m = 180;
+  const newSec = m * 60;
+  pomoState.durations[mode] = newSec;
+  // 현재 모드의 타이머가 멈춰있다면 즉시 남은 시간 갱신
+  if (!pomoState.running && pomoState.mode === mode) {
+    pomoState.remaining = newSec;
+  }
+  pomoSave();
+  pomoUpdateSettingsNote();
+  pomoRender();
+}
+
+// 입력창에 타이핑하는 동안 호출 (실시간 반영, 단 빈 값은 무시)
+function pomoOnInputChange(mode, val) {
+  if (val === '' || val == null) return; // 비어있으면 아직 적용 안 함
+  const n = Number(val);
+  if (!isFinite(n) || n < 1) return;
+  pomoApplyDuration(mode, n);
+}
+// 입력창 포커스 빠질 때: 비어있거나 범위 밖이면 보정
+function pomoOnInputCommit(mode, inputEl) {
+  let n = Number(inputEl.value);
+  if (!isFinite(n) || n < 1) n = 1;
+  if (n > 180) n = 180;
+  inputEl.value = String(Math.round(n));
+  pomoApplyDuration(mode, n);
+}
+// +/- 버튼
+function pomoStepDuration(mode, delta) {
+  const cur = Math.round(pomoModeDuration(mode) / 60);
+  pomoApplyDuration(mode, cur + delta);
+}
+// 기본값 복원
+function pomoResetDurations() {
+  pomoState.durations = { ...POMO_DEFAULTS };
+  if (!pomoState.running) {
+    pomoState.remaining = pomoModeDuration(pomoState.mode);
+  }
+  pomoSave();
+  pomoUpdateSettingsNote();
+  pomoRender();
+}
+
+// 1초마다 tick (running 일 때만 카운트다운 동작 + 완료 감지)
+function pomoTick() {
+  // 날짜 바뀜 체크
+  const td = todayDateStr();
+  if (pomoState.todayDate !== td) {
+    pomoState.todayDate = td;
+    pomoState.todayCount = 0;
+    pomoSave();
+  }
+  if (pomoState.running && pomoState.endTime) {
+    if (Date.now() >= pomoState.endTime) {
+      pomoCompleteSession(false);
+      return;
+    }
+  }
+  pomoRender();
+}
+
+pomoLoad();
+pomoRender();
+setInterval(pomoTick, 1000);
+
+applySettings();
+render();
+</script>
+</body>
+</html>
