@@ -1358,8 +1358,10 @@ applySettings();
 switchView('today');
 
 function openLogoutDialog(){document.getElementById('logout-dialog-bg').classList.add('show');}
+window.openLogoutDialog=openLogoutDialog;
 function closeLogoutDialog(){document.getElementById('logout-dialog-bg').classList.remove('show');}
-async function confirmLogout(){closeLogoutDialog();await signOut();}
+window.closeLogoutDialog=closeLogoutDialog;
+async function confirmLogout(){closeLogoutDialog();if(typeof window.signOut==="function"){await window.signOut();}}
 // ESC로 로그아웃 다이얼로그 닫기
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.getElementById('logout-dialog-bg').classList.contains('show'))closeLogoutDialog();});
 document.getElementById('logout-dialog-bg').addEventListener('click',function(e){if(e.target===this)closeLogoutDialog();});
@@ -1433,6 +1435,7 @@ function translateAuthError(msg){
 }
 async function signOut(){await supa.auth.signOut();}
 window.signOut=signOut;
+window.confirmLogout=async function(){if(window.closeLogoutDialog)window.closeLogoutDialog();await signOut();};
 async function hydrateFromCloud(){
   if(!currentUser)return;showIndicator('동기화 중…',false);suppressSyncUntilHydrated=true;
   try{
