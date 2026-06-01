@@ -1355,7 +1355,20 @@ function pomoTick(){
 }
 pomoLoad();pomoRender();setInterval(pomoTick,1000);
 applySettings();
-switchView('today');
+// module script 로드 완료 후 렌더링 — Safari 타이밍 문제 방지
+// module이 먼저 로드되면 'planner-module-ready' 이벤트가 발생
+// 아직 안 왔으면 대기, 이미 왔으면 즉시 실행
+if(window.__moduleReady){
+  switchView('today');
+} else {
+  window.addEventListener('planner-module-ready', function(){
+    switchView('today');
+  }, {once: true});
+  // 3초 안에 module 안 오면 그냥 로컬 데이터로 렌더링 (fallback)
+  setTimeout(function(){
+    if(!window.__moduleReady) switchView('today');
+  }, 3000);
+}
 
 function openLogoutDialog(){document.getElementById('logout-dialog-bg').classList.add('show');}
 window.openLogoutDialog=openLogoutDialog;
@@ -1465,7 +1478,7 @@ async function hydrateFromCloud(){
   if(!currentUser)return;showIndicator('동기화 중…',false);suppressSyncUntilHydrated=true;
   try{
     const{data,error}=await supa.from('user_data').select('plans, settings').eq('user_id',currentUser.id).maybeSingle();if(error)throw error;
-    if(!data){const{error:insErr}=await supa.from('user_data').insert({user_id:currentUser.id,plans,settings});if(insErr)throw insErr;showIndicator('클라우드 초기화 완료',false);}
+    if(!data){const{error:insErr}=await supa.from('user_data').insert({user_id:currentUser.id,plans,settings});if(insErr)throw insErr;showIndicator('클라우드 초기화 완료',false);render();}
     else{
       if(data.plans&&typeof data.plans==='object'){plans=data.plans;localStorage.setItem('planner-plans',JSON.stringify(plans));}
       if(data.settings&&typeof data.settings==='object'){settings=Object.assign(settings,data.settings);localStorage.setItem('planner-settings',JSON.stringify(settings));}
@@ -1548,6 +1561,10 @@ document.addEventListener('keydown',e=>{
 
 // window에 노출 — 함수 정의 완료 후 맨 끝에서 할당
 // 로그인/로그아웃 버튼 — module 로드 완료 후 바인딩
+// module 로드 완료 신호
+window.__moduleReady = true;
+document.dispatchEvent(new Event('planner-module-ready'));
+
 document.getElementById('auth-btn').addEventListener('click', function(){
   if(currentUser) openLogoutDialog();
   else openAuthModal();
