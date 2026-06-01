@@ -408,7 +408,7 @@ input[type="range"]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;b
       <button class="view-btn" id="btn-stats" onclick="switchView('stats')">통계</button>
       <button class="view-btn" id="btn-settings" onclick="toggleSettings()">설정</button>
     </div>
-    <button class="auth-btn" id="auth-btn" id="auth-trigger-btn">로그인</button>
+    <button class="auth-btn" id="auth-btn" id="auth-btn" onclick="handleAuthClick()">로그인</button>
   </div>
 </div>
 <div class="sync-indicator" id="sync-indicator"></div>
@@ -1365,6 +1365,10 @@ async function confirmLogout(){closeLogoutDialog();if(typeof window.signOut==="f
 // ESC로 로그아웃 다이얼로그 닫기
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.getElementById('logout-dialog-bg').classList.contains('show'))closeLogoutDialog();});
 document.getElementById('logout-dialog-bg').addEventListener('click',function(e){if(e.target===this)closeLogoutDialog();});
+function handleAuthClick(){
+  if(window.__currentUser){ openLogoutDialog(); }
+  else { openAuthModal(); }
+}
 function cloudQueueSync(){}
 </script>
 <script type="module">
@@ -1442,11 +1446,7 @@ async function signOut(){
 }
 window.signOut=signOut;
 window.confirmLogout=async function(){if(window.closeLogoutDialog)window.closeLogoutDialog();await signOut();};
-// auth button — bind via event listener (module-safe)
-document.getElementById('auth-trigger-btn').addEventListener('click', function(){
-  if(currentUser){ if(window.openLogoutDialog) window.openLogoutDialog(); }
-  else openAuthModal();
-});
+
 async function hydrateFromCloud(){
   if(!currentUser)return;showIndicator('동기화 중…',false);suppressSyncUntilHydrated=true;
   try{
@@ -1508,7 +1508,7 @@ function unsubscribeRealtime(){
 
 window.addEventListener('beforeunload',()=>{if(currentUser&&syncTimer)cloudPushNow();});
 supa.auth.onAuthStateChange(async(event,session)=>{
-  const prevUser=currentUser;currentUser=session?.user||null;updateAuthButton();
+  const prevUser=currentUser;currentUser=session?.user||null;window.__currentUser=currentUser;updateAuthButton();
   if(currentUser&&!prevUser){subscribeRealtime();if($('auth-modal-bg').classList.contains('show'))closeAuthModal();showIndicator(`환영합니다, ${currentUser.email}`,false);await hydrateFromCloud();}
   else if(!currentUser&&prevUser){
     unsubscribeRealtime();
@@ -1524,7 +1524,7 @@ supa.auth.onAuthStateChange(async(event,session)=>{
     if(typeof switchView==='function') switchView('today');
   }
 });
-(async()=>{const{data:{session}}=await supa.auth.getSession();if(session?.user){currentUser=session.user;updateAuthButton();await hydrateFromCloud();subscribeRealtime();}else updateAuthButton();})();
+(async()=>{const{data:{session}}=await supa.auth.getSession();if(session?.user){currentUser=session.user;window.__currentUser=currentUser;updateAuthButton();await hydrateFromCloud();subscribeRealtime();}else{window.__currentUser=null;updateAuthButton();}})();
 document.addEventListener('keydown',e=>{
   if(!$('auth-modal-bg').classList.contains('show'))return;
   const onForm=$('auth-screen-form').style.display!=='none';
