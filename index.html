@@ -1495,7 +1495,7 @@ function subscribeRealtime(){
       table: 'user_data',
       filter: `user_id=eq.${currentUser.id}`
     }, async (payload) => {
-      // 내가 push한 변경은 무시 (isSyncing 중이면 skip)
+      // 내가 push한 직후 잠깐은 skip (중복 반영 방지)
       if(isSyncing) return;
       const data = payload.new;
       if(data.plans && typeof data.plans === 'object'){
@@ -1510,15 +1510,25 @@ function subscribeRealtime(){
       render();
       showIndicator('다른 기기에서 동기화됨 ✓', false);
     })
-    .subscribe();
+    .subscribe((status) => {
+      if(status === 'SUBSCRIBED'){
+        console.log('Realtime connected');
+      }
+    });
 }
 
-function unsubscribeRealtime(){
-  if(realtimeChannel){
-    supa.removeChannel(realtimeChannel);
-    realtimeChannel = null;
+
+// 앱 포그라운드 복귀 시 재구독 + 최신 데이터 pull
+document.addEventListener('visibilitychange', async () => {
+  if(document.visibilityState === 'visible' && currentUser){
+    // 연결 끊겼을 수 있으니 재구독
+    unsubscribeRealtime();
+    subscribeRealtime();
+    // 최신 데이터 pull
+    await hydrateFromCloud();
   }
-}
+});
+
 
 window.addEventListener('beforeunload',()=>{if(currentUser&&syncTimer)cloudPushNow();});
 supa.auth.onAuthStateChange(async(event,session)=>{
