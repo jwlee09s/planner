@@ -408,7 +408,7 @@ input[type="range"]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;b
       <button class="view-btn" id="btn-stats" onclick="switchView('stats')">통계</button>
       <button class="view-btn" id="btn-settings" onclick="toggleSettings()">설정</button>
     </div>
-    <button class="auth-btn" id="auth-btn" onclick="onAuthButtonClick()">로그인</button>
+    <button class="auth-btn" id="auth-btn" id="auth-trigger-btn">로그인</button>
   </div>
 </div>
 <div class="sync-indicator" id="sync-indicator"></div>
@@ -1433,10 +1433,20 @@ function translateAuthError(msg){
   if(m.includes('invalid email'))return '올바른 이메일 형식이 아닙니다.';
   return msg;
 }
-async function signOut(){await supa.auth.signOut();}
+async function signOut(){
+  await supa.auth.signOut({ scope: 'local' });
+  // Supabase가 로컬스토리지에 저장하는 세션 키 직접 제거
+  Object.keys(localStorage).forEach(k => {
+    if(k.startsWith('sb-') || k.includes('supabase')) localStorage.removeItem(k);
+  });
+}
 window.signOut=signOut;
 window.confirmLogout=async function(){if(window.closeLogoutDialog)window.closeLogoutDialog();await signOut();};
-window.onAuthButtonClick=function(){if(currentUser){if(window.openLogoutDialog)window.openLogoutDialog();}else openAuthModal();};
+// auth button — bind via event listener (module-safe)
+document.getElementById('auth-trigger-btn').addEventListener('click', function(){
+  if(currentUser){ if(window.openLogoutDialog) window.openLogoutDialog(); }
+  else openAuthModal();
+});
 async function hydrateFromCloud(){
   if(!currentUser)return;showIndicator('동기화 중…',false);suppressSyncUntilHydrated=true;
   try{
@@ -1457,13 +1467,64 @@ async function cloudPushNow(){
   catch(err){console.error('push error:',err);showIndicator('저장 실패'+(err.message||err),true);}
   finally{isSyncing=false;}
 }
+
+/* ── Realtime sync ── */
+let realtimeChannel = null;
+
+function subscribeRealtime(){
+  if(!currentUser || realtimeChannel) return;
+  realtimeChannel = supa
+    .channel('user_data_changes')
+    .on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'user_data',
+      filter: `user_id=eq.${currentUser.id}`
+    }, async (payload) => {
+      // 내가 push한 변경은 무시 (isSyncing 중이면 skip)
+      if(isSyncing) return;
+      const data = payload.new;
+      if(data.plans && typeof data.plans === 'object'){
+        plans = data.plans;
+        localStorage.setItem('planner-plans', JSON.stringify(plans));
+      }
+      if(data.settings && typeof data.settings === 'object'){
+        settings = Object.assign(settings, data.settings);
+        localStorage.setItem('planner-settings', JSON.stringify(settings));
+      }
+      applySettings();
+      render();
+      showIndicator('다른 기기에서 동기화됨 ✓', false);
+    })
+    .subscribe();
+}
+
+function unsubscribeRealtime(){
+  if(realtimeChannel){
+    supa.removeChannel(realtimeChannel);
+    realtimeChannel = null;
+  }
+}
+
 window.addEventListener('beforeunload',()=>{if(currentUser&&syncTimer)cloudPushNow();});
 supa.auth.onAuthStateChange(async(event,session)=>{
   const prevUser=currentUser;currentUser=session?.user||null;updateAuthButton();
-  if(currentUser&&!prevUser){if($('auth-modal-bg').classList.contains('show'))closeAuthModal();showIndicator(`환영합니다, ${currentUser.email}`,false);await hydrateFromCloud();}
-  else if(!currentUser&&prevUser)showIndicator('로그아웃됨',false);
+  if(currentUser&&!prevUser){subscribeRealtime();if($('auth-modal-bg').classList.contains('show'))closeAuthModal();showIndicator(`환영합니다, ${currentUser.email}`,false);await hydrateFromCloud();}
+  else if(!currentUser&&prevUser){
+    unsubscribeRealtime();
+    showIndicator('로그아웃됨',false);
+    // 로컬 플랜 초기화 후 오늘 탭으로 리셋
+    plans=JSON.parse(localStorage.getItem('planner-plans')||'{}');
+    settings=JSON.parse(localStorage.getItem('planner-settings')||'{}');
+    settings.weekStart=settings.weekStart||'mon';
+    settings.theme=settings.theme||'default';
+    settings.effect=settings.effect||'confetti';
+    settings.intensity=settings.intensity||5;
+    applySettings();
+    if(typeof switchView==='function') switchView('today');
+  }
 });
-(async()=>{const{data:{session}}=await supa.auth.getSession();if(session?.user){currentUser=session.user;updateAuthButton();await hydrateFromCloud();}else updateAuthButton();})();
+(async()=>{const{data:{session}}=await supa.auth.getSession();if(session?.user){currentUser=session.user;updateAuthButton();await hydrateFromCloud();subscribeRealtime();}else updateAuthButton();})();
 document.addEventListener('keydown',e=>{
   if(!$('auth-modal-bg').classList.contains('show'))return;
   const onForm=$('auth-screen-form').style.display!=='none';
