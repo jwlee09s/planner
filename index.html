@@ -1438,11 +1438,22 @@ function translateAuthError(msg){
   return msg;
 }
 async function signOut(){
-  await supa.auth.signOut({ scope: 'local' });
-  // Supabase가 로컬스토리지에 저장하는 세션 키 직접 제거
+  try {
+    await supa.auth.signOut({ scope: 'global' });
+  } catch(e) {}
+  // 세션 관련 스토리지 전체 삭제
   Object.keys(localStorage).forEach(k => {
-    if(k.startsWith('sb-') || k.includes('supabase')) localStorage.removeItem(k);
+    if(k.startsWith('sb-') || k.includes('supabase') || k.includes('auth')) {
+      localStorage.removeItem(k);
+    }
   });
+  Object.keys(sessionStorage).forEach(k => {
+    if(k.startsWith('sb-') || k.includes('supabase') || k.includes('auth')) {
+      sessionStorage.removeItem(k);
+    }
+  });
+  // 페이지 리로드로 완전 초기화
+  location.reload();
 }
 
 
