@@ -1386,16 +1386,7 @@ function updateAuthButton(){
   else{btn.classList.remove('signed-in');btn.innerHTML='로그인';btn.title='클릭해서 로그인';}
 }
 
-// window에 노출 — 일반 script onclick에서 호출 가능하게
-window.openAuthModal      = openAuthModal;
-window.closeAuthModal     = closeAuthModal;
-window.switchAuthTab      = switchAuthTab;
-window.submitAuth         = submitAuth;
-window.resendFromForm     = resendFromForm;
-window.resendVerification = resendVerification;
-window.backToForm         = backToForm;
-window.signOut            = signOut;
-window.confirmLogout      = async function(){ closeLogoutDialog(); await signOut(); };
+
 
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 let currentAuthMode='signin';let lastAuthEmail='';let resendCooldownTimer=null;
@@ -1541,6 +1532,18 @@ document.addEventListener('keydown',e=>{
   const onForm=$('auth-screen-form').style.display!=='none';
   if(e.key==='Enter'){e.preventDefault();if(onForm)submitAuth();}
   if(e.key==='Escape')closeAuthModal();
+});
+
+// window에 노출 — 함수 정의 완료 후 맨 끝에서 할당
+window.openAuthModal      = openAuthModal;
+window.closeAuthModal     = closeAuthModal;
+window.switchAuthTab      = switchAuthTab;
+window.submitAuth         = submitAuth;
+window.resendFromForm     = resendFromForm;
+window.resendVerification = resendVerification;
+window.backToForm         = backToForm;
+window.signOut            = signOut;
+window.confirmLogout      = async function(){ closeLogoutDialog(); await signOut(); };
 });
 </script>
 </body>
