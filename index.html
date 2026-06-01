@@ -625,8 +625,8 @@ let plans=JSON.parse(localStorage.getItem('planner-plans')||'{}');
 let currentView='today';
 let viewDate=new Date();
 
-function save(){localStorage.setItem('planner-plans',JSON.stringify(plans));cloudQueueSync();}
-function saveSettings(){localStorage.setItem('planner-settings',JSON.stringify(settings));cloudQueueSync();}
+function save(){localStorage.setItem('planner-plans',JSON.stringify(plans));if(window.cloudQueueSync)window.cloudQueueSync();}
+function saveSettings(){localStorage.setItem('planner-settings',JSON.stringify(settings));if(window.cloudQueueSync)window.cloudQueueSync();}
 function key(y,m,d){return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
 function todayParts(){const t=new Date();return{y:t.getFullYear(),m:t.getMonth(),d:t.getDate()};}
 function getPlans(k){if(!plans[k])plans[k]=[];return plans[k];}
@@ -1517,6 +1517,13 @@ function subscribeRealtime(){
     });
 }
 
+
+function unsubscribeRealtime(){
+  if(realtimeChannel){
+    supa.removeChannel(realtimeChannel);
+    realtimeChannel = null;
+  }
+}
 
 // 앱 포그라운드 복귀 시 재구독 + 최신 데이터 pull
 document.addEventListener('visibilitychange', async () => {
