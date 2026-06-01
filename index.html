@@ -408,7 +408,7 @@ input[type="range"]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;b
       <button class="view-btn" id="btn-stats" onclick="switchView('stats')">통계</button>
       <button class="view-btn" id="btn-settings" onclick="toggleSettings()">설정</button>
     </div>
-    <button class="auth-btn" id="auth-btn" id="auth-btn" onclick="handleAuthClick()">로그인</button>
+    <button class="auth-btn" id="auth-btn" onclick="handleAuthClick()">로그인</button>
   </div>
 </div>
 <div class="sync-indicator" id="sync-indicator"></div>
@@ -421,7 +421,7 @@ input[type="range"]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;b
     <div class="logout-dialog-desc">로컬에 저장된 데이터는 그대로 유지됩니다.</div>
     <div class="logout-dialog-actions">
       <button class="logout-dialog-cancel" onclick="closeLogoutDialog()">취소</button>
-      <button class="logout-dialog-confirm" onclick="confirmLogout()">로그아웃</button>
+      <button class="logout-dialog-confirm" onclick="window.confirmLogout && window.confirmLogout()">로그아웃</button>
     </div>
   </div>
 </div>
@@ -1361,13 +1361,13 @@ function openLogoutDialog(){document.getElementById('logout-dialog-bg').classLis
 window.openLogoutDialog=openLogoutDialog;
 function closeLogoutDialog(){document.getElementById('logout-dialog-bg').classList.remove('show');}
 window.closeLogoutDialog=closeLogoutDialog;
-async function confirmLogout(){closeLogoutDialog();if(typeof window.signOut==="function"){await window.signOut();}}
+
 // ESC로 로그아웃 다이얼로그 닫기
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.getElementById('logout-dialog-bg').classList.contains('show'))closeLogoutDialog();});
 document.getElementById('logout-dialog-bg').addEventListener('click',function(e){if(e.target===this)closeLogoutDialog();});
 function handleAuthClick(){
   if(window.__currentUser){ openLogoutDialog(); }
-  else { openAuthModal(); }
+  else if(window.openAuthModal){ window.openAuthModal(); }
 }
 function cloudQueueSync(){}
 </script>
@@ -1385,6 +1385,18 @@ function updateAuthButton(){
   if(currentUser){btn.classList.add('signed-in');btn.innerHTML=`<span class="auth-dot"></span><span class="auth-email">${escapeHtml(currentUser.email||'로그인됨')}</span>`;btn.title='클릭해서 로그아웃';}
   else{btn.classList.remove('signed-in');btn.innerHTML='로그인';btn.title='클릭해서 로그인';}
 }
+
+// window에 노출 — 일반 script onclick에서 호출 가능하게
+window.openAuthModal      = openAuthModal;
+window.closeAuthModal     = closeAuthModal;
+window.switchAuthTab      = switchAuthTab;
+window.submitAuth         = submitAuth;
+window.resendFromForm     = resendFromForm;
+window.resendVerification = resendVerification;
+window.backToForm         = backToForm;
+window.signOut            = signOut;
+window.confirmLogout      = async function(){ closeLogoutDialog(); await signOut(); };
+
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 let currentAuthMode='signin';let lastAuthEmail='';let resendCooldownTimer=null;
 // onAuthButtonClick is defined in module script
@@ -1444,8 +1456,7 @@ async function signOut(){
     if(k.startsWith('sb-') || k.includes('supabase')) localStorage.removeItem(k);
   });
 }
-window.signOut=signOut;
-window.confirmLogout=async function(){if(window.closeLogoutDialog)window.closeLogoutDialog();await signOut();};
+
 
 async function hydrateFromCloud(){
   if(!currentUser)return;showIndicator('동기화 중…',false);suppressSyncUntilHydrated=true;
