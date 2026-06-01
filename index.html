@@ -1570,6 +1570,8 @@ document.getElementById('auth-btn').addEventListener('click', function(){
   else openAuthModal();
 });
 window.openAuthModal      = openAuthModal;
+window._supa              = supa;
+window._getUser           = () => currentUser;
 window.closeAuthModal     = closeAuthModal;
 window.switchAuthTab      = switchAuthTab;
 window.submitAuth         = submitAuth;
