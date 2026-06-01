@@ -408,7 +408,7 @@ input[type="range"]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;b
       <button class="view-btn" id="btn-stats" onclick="switchView('stats')">통계</button>
       <button class="view-btn" id="btn-settings" onclick="toggleSettings()">설정</button>
     </div>
-    <button class="auth-btn" id="auth-btn" onclick="handleAuthClick()">로그인</button>
+    <button class="auth-btn" id="auth-btn">로그인</button>
   </div>
 </div>
 <div class="sync-indicator" id="sync-indicator"></div>
@@ -420,32 +420,32 @@ input[type="range"]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;b
     <div class="logout-dialog-title">로그아웃할까요?</div>
     <div class="logout-dialog-desc">로컬에 저장된 데이터는 그대로 유지됩니다.</div>
     <div class="logout-dialog-actions">
-      <button class="logout-dialog-cancel" onclick="closeLogoutDialog()">취소</button>
-      <button class="logout-dialog-confirm" onclick="window.confirmLogout && window.confirmLogout()">로그아웃</button>
+      <button class="logout-dialog-cancel" onclick="window.closeLogoutDialog&&window.closeLogoutDialog()">취소</button>
+      <button class="logout-dialog-confirm" onclick="window.confirmLogout&&window.confirmLogout()">로그아웃</button>
     </div>
   </div>
 </div>
 
 <!-- Auth modal -->
-<div class="auth-modal-bg" id="auth-modal-bg" onclick="if(event.target===this)closeAuthModal()">
+<div class="auth-modal-bg" id="auth-modal-bg" onclick="if(event.target===this)window.closeAuthModal&&window.closeAuthModal()">
   <div class="auth-modal-wrap">
-    <button class="auth-close" onclick="closeAuthModal()">×</button>
+    <button class="auth-close" onclick="window.closeAuthModal&&window.closeAuthModal()">×</button>
     <div class="auth-modal">
       <div id="auth-screen-form">
         <h2 id="auth-modal-title">로그인</h2>
         <p class="subtitle">계정에 플랜을 클라우드로 저장하세요</p>
         <div class="auth-tabs">
-          <button class="auth-tab active" id="auth-tab-signin" onclick="switchAuthTab('signin')">로그인</button>
-          <button class="auth-tab" id="auth-tab-signup" onclick="switchAuthTab('signup')">회원가입</button>
+          <button class="auth-tab active" id="auth-tab-signin" onclick="window.switchAuthTab&&window.switchAuthTab('signin')">로그인</button>
+          <button class="auth-tab" id="auth-tab-signup" onclick="window.switchAuthTab&&window.switchAuthTab('signup')">회원가입</button>
         </div>
         <label for="auth-email">이메일</label>
         <input type="email" id="auth-email" autocomplete="email" placeholder="you@example.com" />
         <label for="auth-password">비밀번호</label>
         <input type="password" id="auth-password" autocomplete="current-password" placeholder="6자 이상" />
-        <button class="auth-submit" id="auth-submit" onclick="submitAuth()">로그인</button>
+        <button class="auth-submit" id="auth-submit" onclick="window.submitAuth&&window.submitAuth()">로그인</button>
         <div class="auth-msg" id="auth-msg"></div>
         <div class="auth-resend-row" id="auth-resend-row" style="display:none">
-          <button class="auth-link-btn" onclick="resendFromForm()">확인 메일 다시 보내기</button>
+          <button class="auth-link-btn" onclick="window.resendFromForm&&window.resendFromForm()">확인 메일 다시 보내기</button>
         </div>
       </div>
       <div id="auth-screen-verify" style="display:none">
@@ -456,8 +456,8 @@ input[type="range"]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;b
             <strong id="verify-email-display"></strong>로 보낸 메일의<br>확인 링크를 클릭하면 자동으로 로그인됩니다.
           </div>
           <div class="auth-status-actions">
-            <button class="auth-submit" id="verify-resend-btn" onclick="resendVerification()">확인 메일 다시 보내기</button>
-            <button class="auth-link-btn" onclick="backToForm()">← 다른 이메일로 가입하기</button>
+            <button class="auth-submit" id="verify-resend-btn" onclick="window.resendVerification&&window.resendVerification()">확인 메일 다시 보내기</button>
+            <button class="auth-link-btn" onclick="window.backToForm&&window.backToForm()">← 다른 이메일로 가입하기</button>
           </div>
           <div class="auth-msg" id="verify-msg" style="margin-top:14px;text-align:center"></div>
           <p style="font-size:11.5px;color:var(--text-faint);margin-top:14px;line-height:1.5">메일이 안 보이나요? 스팸함도 확인해주세요.</p>
@@ -1365,10 +1365,7 @@ window.closeLogoutDialog=closeLogoutDialog;
 // ESC로 로그아웃 다이얼로그 닫기
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.getElementById('logout-dialog-bg').classList.contains('show'))closeLogoutDialog();});
 document.getElementById('logout-dialog-bg').addEventListener('click',function(e){if(e.target===this)closeLogoutDialog();});
-function handleAuthClick(){
-  if(window.__currentUser){ openLogoutDialog(); }
-  else if(window.openAuthModal){ window.openAuthModal(); }
-}
+
 function cloudQueueSync(){}
 </script>
 <script type="module">
@@ -1510,7 +1507,7 @@ function unsubscribeRealtime(){
 
 window.addEventListener('beforeunload',()=>{if(currentUser&&syncTimer)cloudPushNow();});
 supa.auth.onAuthStateChange(async(event,session)=>{
-  const prevUser=currentUser;currentUser=session?.user||null;window.__currentUser=currentUser;updateAuthButton();
+  const prevUser=currentUser;currentUser=session?.user||null;updateAuthButton();
   if(currentUser&&!prevUser){subscribeRealtime();if($('auth-modal-bg').classList.contains('show'))closeAuthModal();showIndicator(`환영합니다, ${currentUser.email}`,false);await hydrateFromCloud();}
   else if(!currentUser&&prevUser){
     unsubscribeRealtime();
@@ -1526,7 +1523,7 @@ supa.auth.onAuthStateChange(async(event,session)=>{
     if(typeof switchView==='function') switchView('today');
   }
 });
-(async()=>{const{data:{session}}=await supa.auth.getSession();if(session?.user){currentUser=session.user;window.__currentUser=currentUser;updateAuthButton();await hydrateFromCloud();subscribeRealtime();}else{window.__currentUser=null;updateAuthButton();}})();
+(async()=>{const{data:{session}}=await supa.auth.getSession();if(session?.user){currentUser=session.user;updateAuthButton();await hydrateFromCloud();subscribeRealtime();}else{updateAuthButton();}})();
 document.addEventListener('keydown',e=>{
   if(!$('auth-modal-bg').classList.contains('show'))return;
   const onForm=$('auth-screen-form').style.display!=='none';
@@ -1535,6 +1532,11 @@ document.addEventListener('keydown',e=>{
 });
 
 // window에 노출 — 함수 정의 완료 후 맨 끝에서 할당
+// 로그인/로그아웃 버튼 — module 로드 완료 후 바인딩
+document.getElementById('auth-btn').addEventListener('click', function(){
+  if(currentUser) openLogoutDialog();
+  else openAuthModal();
+});
 window.openAuthModal      = openAuthModal;
 window.closeAuthModal     = closeAuthModal;
 window.switchAuthTab      = switchAuthTab;
@@ -1544,6 +1546,8 @@ window.resendVerification = resendVerification;
 window.backToForm         = backToForm;
 window.signOut            = signOut;
 window.confirmLogout      = async function(){ closeLogoutDialog(); await signOut(); };
+window.closeLogoutDialog  = closeLogoutDialog;
+window.openLogoutDialog   = openLogoutDialog;
 });
 </script>
 </body>
