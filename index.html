@@ -1452,6 +1452,10 @@ async function signOut(){
       sessionStorage.removeItem(k);
     }
   });
+  // 버튼 즉시 로그인 상태로 교체
+  currentUser = null;
+  const btn = document.getElementById('auth-btn');
+  if(btn){ btn.classList.remove('signed-in'); btn.innerHTML = '로그인'; }
   // 페이지 리로드로 완전 초기화
   location.reload();
 }
